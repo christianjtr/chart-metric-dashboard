@@ -9,7 +9,7 @@
     "server": "nodemon server/app.js"
   },
   "dependencies": {
-    "axios": "0.18.0",
+    "axios": "0.18.1",
     "body-parser": "1.18.3",
     "c3": "0.6.8",
     "compression": "1.7.3",
