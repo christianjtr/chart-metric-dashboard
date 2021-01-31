@@ -1,5 +1,7 @@
 # Charting excercise
 
+It's just another test...
+
 ### Assestment
 
 We are going to request you to implement one common graphs on BI applications using D3 library. This should be able to display the information by day, week, month and year. We have data for two years.
