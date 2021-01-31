@@ -8,6 +8,16 @@ We are going to request you to implement one common graphs on BI applications us
 
 ![](charting.gif)
 
+### Installation and running the project
+
+The project requires [Node.js](https://nodejs.org/) and [NPM](https://www.npmjs.com/) to run.
+
+Clone the repository:
+
+```shell
+git clone https://github.com/christianjtr/charting.git
+```
+
 ### Project setup
 
 ```
