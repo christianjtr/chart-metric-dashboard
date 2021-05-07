@@ -23,7 +23,7 @@
     "request-promise": "4.2.2",
     "sockjs": "^0.3.20",
     "ssri": "^6.0.2",
-    "underscore": "1.12.0",
+    "underscore": "1.12.1",
     "vue": "2.6.12",
     "vue-c3": "1.2.11",
     "vue-router": "3.5.1",
