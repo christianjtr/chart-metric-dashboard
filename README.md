@@ -2,6 +2,8 @@
 
 It's just another test...
 
+Dashboard with a few charts (lineSeriesChart, barChart) to display errors regarding a fake platform. (VueJS v2, D3/C3, Express).
+
 ### Assestment
 
 We are going to request you to implement one common graphs on BI applications using D3 library. This should be able to display the information by day, week, month and year. We have data for two years.
