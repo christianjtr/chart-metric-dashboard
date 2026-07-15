@@ -21,7 +21,7 @@
     "ndjson": "2.0.0",
     "nodemon": "2.0.7",
     "request-promise": "4.2.2",
-    "sockjs": "^0.3.20",
+    "sockjs": "^0.3.24",
     "ssri": "^6.0.2",
     "underscore": "1.12.1",
     "vue": "2.6.12",
