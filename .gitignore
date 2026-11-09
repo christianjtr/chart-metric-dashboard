@@ -22,3 +22,5 @@ yarn-error.log*
 
 # Local files
 opencode.json
+.agents/**
+skills-lock.json
