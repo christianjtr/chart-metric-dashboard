@@ -19,6 +19,7 @@ export const SeriesResponseSchema = z.object({
 })
 
 export type SeriesResponse = z.infer<typeof SeriesResponseSchema>
+export type NamedSeries = z.infer<typeof NamedSeriesSchema>
 
 export const SeriesQuerySchema = z.object({
   source: z.string().min(1),
