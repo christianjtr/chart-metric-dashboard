@@ -2,49 +2,19 @@
   "name": "webapp",
   "version": "0.1.0",
   "private": true,
+  "workspaces": [
+    "client",
+    "server",
+    "legacy"
+  ],
   "scripts": {
     "serve": "vue-cli-service serve",
     "build": "vue-cli-service build",
     "start": "concurrently \"vue-cli-service serve\" \"nodemon server/app.js\"",
-    "server": "nodemon server/app.js"
-  },
-  "dependencies": {
-    "axios": "^1.20.0",
-    "body-parser": "^1.20.8",
-    "c3": "0.7.20",
-    "compression": "^1.8.2",
-    "concurrently": "5.3.0",
-    "cors": "2.8.5",
-    "express": "^4.22.3",
-    "moment": "^2.31.0",
-    "morgan": "^1.12.1",
-    "ndjson": "2.0.0",
-    "nodemon": "^3.1.14",
-    "request-promise": "^0.0.1",
-    "sockjs": "^0.3.16",
-    "ssri": "^6.0.2",
-    "underscore": "^1.13.8",
-    "vue": "^2.7.16",
-    "vue-c3": "1.2.11",
-    "vue-router": "3.5.1",
-    "vuetify": "^1.2.9",
-    "vuex": "3.6.2"
-  },
-  "devDependencies": {
-    "@vue/cli-plugin-babel": "^5.0.9",
-    "@vue/cli-plugin-eslint": "^5.0.9",
-    "@vue/cli-service": "^5.0.9",
-    "@vue/eslint-config-standard": "^9.0.1",
-    "ajv": "^8.20.0",
-    "ajv-formats": "^2.1.1",
-    "css-loader": "^5.2.7",
-    "eslint-config-vue": "2.0.2",
-    "eslint-plugin-vue": "7.5.0",
-    "sass": "^1.104.1",
-    "sass-loader": "10.1.1",
-    "style-resources-loader": "1.4.1",
-    "vue-cli-plugin-style-resources-loader": "0.1.4",
-    "vue-template-compiler": "^2.7.16"
+    "server": "nodemon server/app.js",
+    "dev:client": "npm run dev --workspace client",
+    "dev:server": "npm run dev --workspace server",
+    "test": "npm run test --workspace server"
   },
   "overrides": {
     "braces": "^3.0.3",

@@ -1,0 +1,48 @@
+{
+  "sources": [
+    {
+      "id": "platform-errors",
+      "adapter": "ndjson",
+      "label": "Fake Platform Errors",
+      "path": "server/data/data.ndjson",
+      "mapping": {
+        "date": "date",
+        "series": "typeOfError"
+      }
+    },
+    {
+      "id": "external-api",
+      "adapter": "rest",
+      "label": "External API",
+      "url": "https://api.example.com/events",
+      "refresh": 300,
+      "headers": {
+        "Authorization": "env:EXTERNAL_API_KEY"
+      },
+      "mapping": {
+        "date": "items[].createdAt",
+        "value": "items[].count",
+        "series": "items[].kind"
+      }
+    }
+  ],
+  "panels": [
+    {
+      "title": "Errors over time",
+      "source": "platform-errors",
+      "metric": "count",
+      "chart": "area-step",
+      "granularity": "day",
+      "groupBy": "typeOfError",
+      "refresh": 60
+    },
+    {
+      "title": "Errors by type per month",
+      "source": "platform-errors",
+      "metric": "count",
+      "chart": "bar",
+      "granularity": "month",
+      "groupBy": "typeOfError"
+    }
+  ]
+}

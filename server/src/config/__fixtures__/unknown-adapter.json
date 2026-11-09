@@ -1,0 +1,14 @@
+{
+  "sources": [
+    {
+      "id": "weird",
+      "adapter": "graphql",
+      "label": "Unsupported adapter",
+      "url": "https://api.example.com/graphql",
+      "mapping": { "date": "date" }
+    }
+  ],
+  "panels": [
+    { "title": "P", "source": "weird", "chart": "line" }
+  ]
+}

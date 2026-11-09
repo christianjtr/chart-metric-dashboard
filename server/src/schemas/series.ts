@@ -1,0 +1,32 @@
+import { z } from 'zod'
+import { GranularitySchema } from './config'
+
+export const SeriesPointSchema = z.object({
+  x: z.number(),
+  y: z.number()
+})
+
+export const NamedSeriesSchema = z.object({
+  name: z.string(),
+  points: z.array(SeriesPointSchema)
+})
+
+export const SeriesResponseSchema = z.object({
+  sourceId: z.string(),
+  metric: z.string(),
+  granularity: GranularitySchema,
+  series: z.array(NamedSeriesSchema)
+})
+
+export type SeriesResponse = z.infer<typeof SeriesResponseSchema>
+
+export const SeriesQuerySchema = z.object({
+  source: z.string().min(1),
+  metric: z.string().min(1).default('count'),
+  granularity: GranularitySchema.default('day'),
+  from: z.number().optional(),
+  to: z.number().optional(),
+  groupBy: z.string().optional()
+})
+
+export type SeriesQuery = z.infer<typeof SeriesQuerySchema>

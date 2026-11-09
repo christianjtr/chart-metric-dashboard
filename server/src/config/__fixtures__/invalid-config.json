@@ -1,0 +1,6 @@
+{
+  "sources": [
+    { "id": "broken", "adapter": "ndjson", "label": "Broken", "path": 42, "mapping": {} }
+  ],
+  "panels": "not-an-array"
+}
