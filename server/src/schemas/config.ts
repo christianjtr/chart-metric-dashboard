@@ -3,7 +3,8 @@ import { z } from 'zod'
 const MappingSchema = z.object({
   date: z.string().min(1),
   value: z.string().optional(),
-  series: z.string().optional()
+  series: z.string().optional(),
+  dateFormat: z.string().optional()
 })
 
 export const NdjsonSourceSchema = z.object({

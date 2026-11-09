@@ -1,10 +1,20 @@
 import { initTRPC, TRPCError } from '@trpc/server'
 import { loadConfig } from '../config/loadConfig'
 import { SeriesQuerySchema, SeriesResponseSchema } from '../schemas/series'
+import { createAdapter } from '../sources/SourceAdapter'
 
 const t = initTRPC.create()
 
 const CONFIG_PATH = process.env.DASHBOARD_CONFIG ?? 'dashboard.config.json'
+
+const getSource = (sourceId: string) => {
+  const config = loadConfig(CONFIG_PATH)
+  const source = config.sources.find((s) => s.id === sourceId)
+  if (!source) {
+    throw new TRPCError({ code: 'NOT_FOUND', message: `Unknown source: ${sourceId}` })
+  }
+  return source
+}
 
 export const appRouter = t.router({
   health: t.procedure.query(() => ({ ok: true })),
@@ -17,12 +27,8 @@ export const appRouter = t.router({
       .input(SeriesQuerySchema)
       .output(SeriesResponseSchema)
       .query(async ({ input }) => {
-        const config = loadConfig(CONFIG_PATH)
-        const source = config.sources.find((s) => s.id === input.source)
-        if (!source) {
-          throw new TRPCError({ code: 'NOT_FOUND', message: `Unknown source: ${input.source}` })
-        }
-        throw new TRPCError({ code: 'NOT_IMPLEMENTED', message: 'Adapters arrive in feat/02' })
+        const adapter = createAdapter(getSource(input.source))
+        return adapter.getSeries(input)
       })
   })
 })
