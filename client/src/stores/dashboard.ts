@@ -1,22 +1,46 @@
 import { defineStore } from 'pinia'
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import { trpc } from '../api/trpc'
 import type { Panel } from '@server/schemas/config'
 import type { NamedSeries } from '@server/schemas/series'
 
-interface PanelState {
+export interface PanelState {
   series?: NamedSeries[]
   error?: string
   loading: boolean
 }
 
-export type { PanelState }
+export type TimeRange = 'all' | '1h' | '2h'
+
+const RANGE_MS: Record<Exclude<TimeRange, 'all'>, number> = {
+  '1h': 3_600_000,
+  '2h': 7_200_000
+}
 
 export const useDashboardStore = defineStore('dashboard', () => {
   const panels = ref<Panel[]>([])
   const panelState = ref<Record<number, PanelState>>({})
   const configError = ref<string>()
+  const timeRange = ref<TimeRange>('all')
+  const globalRefresh = ref<number | undefined>(undefined)
   const timers = new Map<number, ReturnType<typeof setInterval>>()
+
+  const from = computed(() =>
+    timeRange.value === 'all' ? undefined : Date.now() - RANGE_MS[timeRange.value]
+  )
+
+  const sections = computed(() => {
+    const groups: Array<{ name?: string; indices: number[] }> = []
+    panels.value.forEach((panel, index) => {
+      const last = groups[groups.length - 1]
+      if (last?.name === panel.section) {
+        last.indices.push(index)
+      } else {
+        groups.push({ name: panel.section, indices: [index] })
+      }
+    })
+    return groups
+  })
 
   const ensureState = (index: number): PanelState => {
     panelState.value[index] ??= { loading: false }
@@ -47,7 +71,9 @@ export const useDashboardStore = defineStore('dashboard', () => {
         source: panel.source,
         metric: panel.metric,
         granularity: panel.granularity,
-        groupBy: panel.groupBy
+        groupBy: panel.groupBy,
+        reduce: panel.reduce,
+        from: from.value
       })
       state.series = response.series
       state.error = undefined
@@ -58,11 +84,26 @@ export const useDashboardStore = defineStore('dashboard', () => {
     }
   }
 
+  async function refetchAll() {
+    await Promise.all(panels.value.map((_, index) => fetchPanel(index)))
+  }
+
   function startPolling() {
     stopPolling()
     panels.value.forEach((panel, index) => {
-      timers.set(index, setInterval(() => void fetchPanel(index), panel.refresh * 1000))
+      const seconds = globalRefresh.value ?? panel.refresh
+      timers.set(index, setInterval(() => void fetchPanel(index), seconds * 1000))
     })
+  }
+
+  function setGlobalRefresh(seconds?: number) {
+    globalRefresh.value = seconds
+    startPolling()
+  }
+
+  function setTimeRange(range: TimeRange) {
+    timeRange.value = range
+    void refetchAll()
   }
 
   function stopPolling() {
@@ -70,5 +111,19 @@ export const useDashboardStore = defineStore('dashboard', () => {
     timers.clear()
   }
 
-  return { panels, panelState, configError, loadConfig, fetchPanel, startPolling, stopPolling }
+  return {
+    panels,
+    panelState,
+    configError,
+    timeRange,
+    globalRefresh,
+    sections,
+    loadConfig,
+    fetchPanel,
+    refetchAll,
+    startPolling,
+    setGlobalRefresh,
+    setTimeRange,
+    stopPolling
+  }
 })

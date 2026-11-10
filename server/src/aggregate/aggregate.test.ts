@@ -30,6 +30,11 @@ describe('bucketStart', () => {
     expect(bucketStart(ts, 'day')).toBe(Date.UTC(2026, 2, 5))
   })
 
+  it('buckets minutes and hours to their start', () => {
+    expect(bucketStart(ts, 'minute')).toBe(Date.UTC(2026, 2, 5, 15, 30))
+    expect(bucketStart(ts, 'hour')).toBe(Date.UTC(2026, 2, 5, 15))
+  })
+
   it('buckets weeks to Monday', () => {
     expect(bucketStart(ts, 'week')).toBe(Date.UTC(2026, 2, 2))
   })
@@ -82,5 +87,29 @@ describe('aggregate', () => {
       { x: Date.UTC(2025, 0, 1), y: 4 },
       { x: Date.UTC(2026, 0, 1), y: 5 }
     ])
+  })
+
+  it('reduces with avg, last, min and max', () => {
+    const timed: EventRow[] = [
+      { date: Date.UTC(2026, 0, 1, 10), value: 8, series: 'x' },
+      { date: Date.UTC(2026, 0, 1, 11), value: 2, series: 'x' },
+      { date: Date.UTC(2026, 0, 1, 12), value: 5, series: 'x' }
+    ]
+    const run = (reduce: 'avg' | 'last' | 'min' | 'max') =>
+      aggregate(timed, { granularity: 'day', reduce })[0].points[0].y
+
+    expect(run('avg')).toBe(5)
+    expect(run('last')).toBe(5)
+    expect(run('min')).toBe(2)
+    expect(run('max')).toBe(8)
+  })
+
+  it('uses latest date in bucket for last, not iteration order', () => {
+    const outOfOrder: EventRow[] = [
+      { date: Date.UTC(2026, 0, 1, 12), value: 1, series: 'x' },
+      { date: Date.UTC(2026, 0, 1, 2), value: 9, series: 'x' }
+    ]
+    const result = aggregate(outOfOrder, { granularity: 'day', reduce: 'last' })
+    expect(result[0].points[0].y).toBe(1)
   })
 })

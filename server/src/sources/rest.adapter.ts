@@ -88,7 +88,8 @@ export class RestAdapter implements SourceAdapter {
       granularity: query.granularity,
       series: aggregate(events, {
         granularity: query.granularity,
-        groupBy: query.groupBy ?? fields.series
+        groupBy: query.groupBy ?? fields.series,
+        reduce: query.reduce
       })
     }
   }

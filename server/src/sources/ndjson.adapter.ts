@@ -43,7 +43,8 @@ export class NdjsonAdapter implements SourceAdapter {
       granularity: query.granularity,
       series: aggregate(events, {
         granularity: query.granularity,
-        groupBy: query.groupBy
+        groupBy: query.groupBy,
+        reduce: query.reduce
       })
     }
   }
