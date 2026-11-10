@@ -1,43 +1,38 @@
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
-import { trpc } from './api/trpc'
+import { computed, onBeforeUnmount, onMounted } from 'vue'
+import { useDashboardStore, type PanelState } from './stores/dashboard'
+import type { Panel } from '@server/schemas/config'
+import PanelChart from './components/PanelChart.vue'
 
-const gatewayOk = ref<boolean | null>(null)
-const sources = ref<Awaited<ReturnType<typeof trpc.sources.list.query>>>([])
+const store = useDashboardStore()
 
-onMounted(async () => {
-  try {
-    gatewayOk.value = (await trpc.health.query()).ok
-    sources.value = await trpc.sources.list.query()
-  } catch {
-    gatewayOk.value = false
-  }
-})
+const panels = computed<Panel[]>(() => store.panels)
+const stateAt = (index: number): PanelState | undefined => store.panelState[index]
+
+onMounted(() => void store.loadConfig())
+onBeforeUnmount(() => store.stopPolling())
 </script>
 
 <template>
   <v-app>
-    <v-app-bar color="primary" title="Chart Dashboard">
-      <v-chip class="ma-4" :color="gatewayOk === null ? 'grey' : gatewayOk ? 'success' : 'error'">
-        {{ gatewayOk === null ? 'connecting…' : gatewayOk ? 'gateway: ok' : 'gateway: down' }}
-      </v-chip>
-    </v-app-bar>
+    <v-app-bar color="primary" title="Chart Dashboard" />
 
     <v-main>
-      <v-container>
-        <h2 class="text-h5 mb-4">Sources</h2>
-        <v-list lines="one">
-          <v-list-item v-for="source in sources" :key="source.id" :title="source.label">
-            <template #append>
-              <v-chip size="small">{{ source.adapter }}</v-chip>
-            </template>
-          </v-list-item>
-        </v-list>
+      <v-container fluid>
+        <v-alert v-if="store.configError" type="error" variant="tonal" class="mt-4">
+          {{ store.configError }}
+        </v-alert>
 
-        <p class="text-medium-emphasis mt-4">
-          Panels render from <code>dashboard.config.json</code> — adapters and charts land in the
-          next phases.
-        </p>
+        <v-row v-else>
+          <v-col v-for="(panel, index) in panels" :key="index" cols="12" md="6">
+            <PanelChart
+              :panel="panel"
+              :data="stateAt(index)?.series"
+              :loading="stateAt(index)?.loading"
+              :error="stateAt(index)?.error"
+            />
+          </v-col>
+        </v-row>
       </v-container>
     </v-main>
   </v-app>
