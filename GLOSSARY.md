@@ -36,6 +36,22 @@ _Avoid_: card, widget, chart (a chart is only the render type)
 The interval in seconds at which a Panel re-requests its Series from the Gateway (polling).
 _Avoid_: polling, interval, auto-update
 
+**Reduce**:
+How each time bucket collapses its events into one y value: sum, avg, last, min, or max. Defaults to sum.
+_Avoid_: aggregation function, reducer, rollup
+
+**Threshold**:
+A `{color, value}` bound on a Panel; the color of the highest threshold at or below the current value wins (Grafana semantics).
+_Avoid_: alert rule, limit, budget
+
+**Span**:
+How many of the 12 grid columns a Panel occupies on desktop. Defaults to 6 (two panels per row).
+_Avoid_: width, size, columns
+
+**Section**:
+A named row group that orders Panels in declaration order and renders a header.
+_Avoid_: row, group, category
+
 **Dashboard Config**:
 The single shared file (`dashboard.config.json`) declaring Sources and Panels; both layers consume it.
 _Avoid_: settings, manifest, app config

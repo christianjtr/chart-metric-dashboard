@@ -32,11 +32,19 @@ export const SourceSchema = z.discriminatedUnion('adapter', [
 
 export type Source = z.infer<typeof SourceSchema>
 
-export const ChartTypeSchema = z.enum(['area-step', 'bar', 'line'])
+export const ChartTypeSchema = z.enum(['area-step', 'bar', 'line', 'stat', 'gauge'])
 export type ChartType = z.infer<typeof ChartTypeSchema>
 
-export const GranularitySchema = z.enum(['day', 'week', 'month', 'year'])
+export const GranularitySchema = z.enum(['minute', 'hour', 'day', 'week', 'month', 'year'])
 export type Granularity = z.infer<typeof GranularitySchema>
+
+export const ReduceSchema = z.enum(['sum', 'avg', 'last', 'min', 'max'])
+export type Reduce = z.infer<typeof ReduceSchema>
+
+const ThresholdSchema = z.object({
+  color: z.string().min(1),
+  value: z.number()
+})
 
 export const PanelSchema = z.object({
   title: z.string().min(1),
@@ -45,7 +53,15 @@ export const PanelSchema = z.object({
   chart: ChartTypeSchema,
   granularity: GranularitySchema.default('day'),
   groupBy: z.string().optional(),
-  refresh: z.number().int().positive().default(60)
+  refresh: z.number().int().positive().default(60),
+  unit: z.string().optional(),
+  decimals: z.number().int().min(0).max(4).optional(),
+  min: z.number().optional(),
+  max: z.number().optional(),
+  thresholds: z.array(ThresholdSchema).max(4).optional(),
+  span: z.number().int().min(1).max(12).default(6),
+  section: z.string().optional(),
+  reduce: ReduceSchema.default('sum')
 })
 
 export type Panel = z.infer<typeof PanelSchema>

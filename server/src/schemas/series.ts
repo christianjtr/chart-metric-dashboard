@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { GranularitySchema } from './config'
+import { GranularitySchema, ReduceSchema } from './config'
 
 export const SeriesPointSchema = z.object({
   x: z.number(),
@@ -27,7 +27,8 @@ export const SeriesQuerySchema = z.object({
   granularity: GranularitySchema.default('day'),
   from: z.number().optional(),
   to: z.number().optional(),
-  groupBy: z.string().optional()
+  groupBy: z.string().optional(),
+  reduce: ReduceSchema.default('sum')
 })
 
 export type SeriesQuery = z.infer<typeof SeriesQuerySchema>

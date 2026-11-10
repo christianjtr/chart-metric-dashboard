@@ -35,7 +35,7 @@
       "chart": "area-step",
       "granularity": "day",
       "groupBy": "typeOfError",
-      "refresh": 60
+      "section": "Overview"
     },
     {
       "title": "Errors by type per month",
@@ -43,7 +43,62 @@
       "metric": "count",
       "chart": "bar",
       "granularity": "month",
-      "groupBy": "typeOfError"
+      "groupBy": "typeOfError",
+      "section": "Overview"
+    },
+    {
+      "title": "Total errors (latest year)",
+      "source": "platform-errors",
+      "metric": "count",
+      "chart": "stat",
+      "granularity": "year",
+      "reduce": "sum",
+      "span": 3,
+      "section": "Display demos"
+    },
+    {
+      "title": "Errors in latest month",
+      "source": "platform-errors",
+      "metric": "count",
+      "chart": "stat",
+      "granularity": "month",
+      "reduce": "sum",
+      "span": 3,
+      "section": "Display demos"
+    },
+    {
+      "title": "Errors vs 10k budget",
+      "source": "platform-errors",
+      "metric": "count",
+      "chart": "gauge",
+      "granularity": "year",
+      "reduce": "sum",
+      "min": 0,
+      "max": 10000,
+      "thresholds": [
+        { "value": 0, "color": "#73bf69" },
+        { "value": 7000, "color": "#f2cc0c" },
+        { "value": 9000, "color": "#f2495c" }
+      ],
+      "span": 3,
+      "section": "Display demos"
+    },
+    {
+      "title": "Peak day (2017)",
+      "source": "platform-errors",
+      "metric": "count",
+      "chart": "gauge",
+      "granularity": "day",
+      "reduce": "max",
+      "min": 0,
+      "max": 30,
+      "thresholds": [
+        { "value": 0, "color": "#73bf69" },
+        { "value": 15, "color": "#f2cc0c" },
+        { "value": 25, "color": "#f2495c" }
+      ],
+      "span": 3,
+      "section": "Display demos"
     }
   ]
 }
