@@ -10,6 +10,7 @@
   "dependencies": {
     "@date-fns/utc": "^2.1.1",
     "@trpc/server": "^11.0.0",
+    "cors": "^2.8.5",
     "date-fns": "^4.4.0",
     "express": "^4.22.3",
     "zod": "^3.24.0"
