@@ -13,7 +13,7 @@
     "@vue/devtools-api": "^8.2.1",
     "echarts": "^6.1.0",
     "pinia": "^4.1.0",
-    "vue": "^3.5.44",
+    "vue": "^3.5.45",
     "vue-echarts": "^8.3.2",
     "vuetify": "^4.3.2"
   },

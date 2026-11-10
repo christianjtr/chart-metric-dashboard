@@ -18,6 +18,12 @@ const getSource = (sourceId: string) => {
 
 export const appRouter = t.router({
   health: t.procedure.query(() => ({ ok: true })),
+  dashboard: t.router({
+    config: t.procedure.query(() => {
+      const config = loadConfig(CONFIG_PATH)
+      return { panels: config.panels }
+    })
+  }),
   sources: t.router({
     list: t.procedure.query(() => {
       const config = loadConfig(CONFIG_PATH)
