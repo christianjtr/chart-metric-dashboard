@@ -1,0 +1,27 @@
+.panel-card {
+  border: thin solid rgba(var(--v-theme-on-surface), 0.14);
+  border-radius: 8px;
+}
+
+.panel-card-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  padding: 14px 12px 2px 16px;
+}
+
+.panel-card-title {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.9375rem;
+  font-weight: 500;
+  line-height: 1.5;
+  color: rgba(var(--v-theme-on-surface), 0.92);
+}
+
+.panel-card-text {
+  padding-top: 8px;
+}

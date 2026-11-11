@@ -55,3 +55,19 @@ _Avoid_: row, group, category
 **Dashboard Config**:
 The single shared file (`dashboard.config.json`) declaring Sources and Panels; both layers consume it.
 _Avoid_: settings, manifest, app config
+
+**Metrics Collector**:
+The gateway component that samples its own health (latency, error rate, throughput, CPU, RAM, uptime) into bounded ring buffers, exposed to Panels through the internal Adapter.
+_Avoid_: telemetry, instrumentation, Prometheus
+
+**Internal Source**:
+A Source kind backed by the Metrics Collector instead of external data; its metrics are queried like any other Source's Series.
+_Avoid_: self-metrics source, system source
+
+**Settings**:
+Runtime values the dashboard user edits from the UI (e.g. the PSI target URL), persisted to a git-ignored file and referenced from Config with a `setting:key` prefix.
+_Avoid_: preferences, options, runtime config
+
+**Cache TTL**:
+Seconds a REST Source reuses the last successful fetch for an identical final URL before hitting the origin again.
+_Avoid_: cache time, expiry, memoization

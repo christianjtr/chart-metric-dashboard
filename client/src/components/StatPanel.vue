@@ -4,6 +4,7 @@ import type { Panel } from '@server/schemas/config'
 import type { NamedSeries } from '@server/schemas/series'
 import { formatValue } from '../utils/format'
 import { colorFor } from '../utils/thresholds'
+import PanelDescription from './PanelDescription.vue'
 
 const props = defineProps<{
   panel: Panel
@@ -26,9 +27,13 @@ const color = computed(() =>
 </script>
 
 <template>
-  <v-card class="fill-height">
+  <v-card class="panel-card fill-height">
     <v-progress-linear :active="props.loading" color="primary" indeterminate />
-    <v-card-title>{{ props.panel.title }}</v-card-title>
+    <v-card-title class="panel-card-header">
+      <span class="panel-card-title">{{ props.panel.title }}</span>
+      <v-spacer />
+      <PanelDescription :description="props.panel.description" />
+    </v-card-title>
     <v-alert v-if="props.error" type="error" variant="tonal" class="mx-4">
       {{ props.error }}
     </v-alert>

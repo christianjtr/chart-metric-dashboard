@@ -8,6 +8,7 @@ import type { Panel } from '@server/schemas/config'
 import type { NamedSeries } from '@server/schemas/series'
 import { formatValue } from '../utils/format'
 import { colorFor, gaugeColorStops } from '../utils/thresholds'
+import PanelDescription from './PanelDescription.vue'
 
 echarts.use([GaugeChart, CanvasRenderer])
 
@@ -24,6 +25,7 @@ let observer: ResizeObserver | undefined
 
 const min = computed(() => props.panel.min ?? 0)
 const max = computed(() => props.panel.max ?? 100)
+const hasData = computed(() => (props.data?.[0]?.points.length ?? 0) > 0)
 const current = computed(() => props.data?.[0]?.points.at(-1)?.y ?? min.value)
 
 const buildOption = (): EChartsOption => ({
@@ -59,33 +61,42 @@ const buildOption = (): EChartsOption => ({
   ]
 })
 
-const render = () => chart?.setOption(buildOption(), { notMerge: true })
+const render = () => {
+  if (!hasData.value) return
+  if (!chart && chartEl.value) {
+    chart = echarts.init(chartEl.value)
+    observer = new ResizeObserver(() => chart?.resize())
+    observer.observe(chartEl.value)
+  }
+  chart?.setOption(buildOption(), { notMerge: true })
+}
 
-onMounted(() => {
-  if (!chartEl.value) return
-  chart = echarts.init(chartEl.value)
-  observer = new ResizeObserver(() => chart?.resize())
-  observer.observe(chartEl.value)
-  render()
-})
-
-watch(current, render)
+onMounted(render)
+watch([current, hasData], render, { flush: 'post' })
 
 onBeforeUnmount(() => {
   observer?.disconnect()
   chart?.dispose()
 })
+
 </script>
 
 <template>
-  <v-card class="fill-height">
+  <v-card class="panel-card fill-height">
     <v-progress-linear :active="props.loading" color="primary" indeterminate />
-    <v-card-title>{{ props.panel.title }}</v-card-title>
+    <v-card-title class="panel-card-header">
+      <span class="panel-card-title">{{ props.panel.title }}</span>
+      <v-spacer />
+      <PanelDescription :description="props.panel.description" />
+    </v-card-title>
     <v-alert v-if="props.error" type="error" variant="tonal" class="mx-4">
       {{ props.error }}
     </v-alert>
     <v-card-text>
-      <div ref="chartEl" style="height: 320px" />
+      <div v-if="hasData" ref="chartEl" style="height: 320px" />
+      <div v-else class="text-h4 text-medium-emphasis text-center" style="line-height: 320px">
+        &mdash;
+      </div>
     </v-card-text>
   </v-card>
 </template>

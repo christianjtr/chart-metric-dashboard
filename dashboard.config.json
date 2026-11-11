@@ -25,11 +25,56 @@
         "value": "items[].count",
         "series": "items[].kind"
       }
+    },
+    {
+      "id": "psi-performance",
+      "adapter": "rest",
+      "label": "PageSpeed Insights (mobile)",
+      "url": "https://www.googleapis.com/pagespeedonline/v5/runPagespeed",
+      "refresh": 900,
+      "cacheTtl": 900,
+      "params": {
+        "url": "setting:psiTargetUrl",
+        "strategy": "mobile",
+        "category": "performance",
+        "key": "env:PAGESPEED_API_KEY"
+      },
+      "mapping": {
+        "date": "now",
+        "value": "lighthouseResult.audits.[].score",
+        "series": "lighthouseResult.audits.[].id",
+        "scale": 100
+      }
+    },
+    {
+      "id": "psi-vitals",
+      "adapter": "rest",
+      "label": "PageSpeed Insights (mobile)",
+      "url": "https://www.googleapis.com/pagespeedonline/v5/runPagespeed",
+      "refresh": 900,
+      "cacheTtl": 900,
+      "params": {
+        "url": "setting:psiTargetUrl",
+        "strategy": "mobile",
+        "category": "performance",
+        "key": "env:PAGESPEED_API_KEY"
+      },
+      "mapping": {
+        "date": "now",
+        "value": "lighthouseResult.audits.[].numericValue",
+        "series": "lighthouseResult.audits.[].id"
+      }
+    },
+    {
+      "id": "gateway",
+      "adapter": "internal",
+      "label": "Gateway self-metrics"
     }
   ],
   "panels": [
     {
       "title": "Errors over time",
+      "description": "Daily count of platform errors over the selected time range, broken down by error type. Use it to spot trends and sudden spikes in application health.",
       "source": "platform-errors",
       "metric": "count",
       "chart": "area-step",
@@ -39,6 +84,7 @@
     },
     {
       "title": "Errors by type per month",
+      "description": "Monthly total of platform errors grouped by error type, so you can compare which kinds of errors dominate in each month.",
       "source": "platform-errors",
       "metric": "count",
       "chart": "bar",
@@ -48,6 +94,7 @@
     },
     {
       "title": "Total errors (latest year)",
+      "description": "Sum of every platform error recorded in the most recent year available in the dataset.",
       "source": "platform-errors",
       "metric": "count",
       "chart": "stat",
@@ -58,6 +105,7 @@
     },
     {
       "title": "Errors in latest month",
+      "description": "Sum of every platform error recorded in the most recent month available in the dataset.",
       "source": "platform-errors",
       "metric": "count",
       "chart": "stat",
@@ -68,6 +116,7 @@
     },
     {
       "title": "Errors vs 10k budget",
+      "description": "Total errors measured against an annual error budget of 10,000. Green means well within budget, yellow is approaching the limit, red means the budget is nearly exhausted.",
       "source": "platform-errors",
       "metric": "count",
       "chart": "gauge",
@@ -76,15 +125,25 @@
       "min": 0,
       "max": 10000,
       "thresholds": [
-        { "value": 0, "color": "#73bf69" },
-        { "value": 7000, "color": "#f2cc0c" },
-        { "value": 9000, "color": "#f2495c" }
+        {
+          "value": 0,
+          "color": "#73bf69"
+        },
+        {
+          "value": 7000,
+          "color": "#f2cc0c"
+        },
+        {
+          "value": 9000,
+          "color": "#f2495c"
+        }
       ],
       "span": 3,
       "section": "Display demos"
     },
     {
       "title": "Peak day (2017)",
+      "description": "Highest error count recorded on any single day in the dataset, shown on a 0-30 scale to gauge how severe the worst day was.",
       "source": "platform-errors",
       "metric": "count",
       "chart": "gauge",
@@ -93,12 +152,228 @@
       "min": 0,
       "max": 30,
       "thresholds": [
-        { "value": 0, "color": "#73bf69" },
-        { "value": 15, "color": "#f2cc0c" },
-        { "value": 25, "color": "#f2495c" }
+        {
+          "value": 0,
+          "color": "#73bf69"
+        },
+        {
+          "value": 15,
+          "color": "#f2cc0c"
+        },
+        {
+          "value": 25,
+          "color": "#f2495c"
+        }
       ],
       "span": 3,
       "section": "Display demos"
+    },
+    {
+      "title": "PSI performance score (mobile)",
+      "description": "Overall PageSpeed Insights performance score (0-100) for the configured site, measured with the mobile strategy. Scores above 90 are considered good.",
+      "source": "psi-performance",
+      "metric": "performance",
+      "chart": "gauge",
+      "granularity": "hour",
+      "reduce": "last",
+      "unit": "pts",
+      "min": 0,
+      "max": 100,
+      "thresholds": [
+        {
+          "value": 0,
+          "color": "#f2495c"
+        },
+        {
+          "value": 50,
+          "color": "#f2cc0c"
+        },
+        {
+          "value": 90,
+          "color": "#73bf69"
+        }
+      ],
+      "refresh": 900,
+      "span": 4,
+      "section": "Health"
+    },
+    {
+      "title": "Largest Contentful Paint",
+      "description": "Largest Contentful Paint (LCP): how long the biggest content element takes to render, measured by PageSpeed Insights on mobile. Under 2.5s is good, over 4s is poor.",
+      "source": "psi-vitals",
+      "metric": "largest-contentful-paint",
+      "chart": "stat",
+      "granularity": "hour",
+      "reduce": "last",
+      "unit": "ms",
+      "thresholds": [
+        {
+          "value": 0,
+          "color": "#73bf69"
+        },
+        {
+          "value": 2500,
+          "color": "#f2cc0c"
+        },
+        {
+          "value": 4000,
+          "color": "#f2495c"
+        }
+      ],
+      "refresh": 900,
+      "span": 4,
+      "section": "Health"
+    },
+    {
+      "title": "Total Blocking Time",
+      "description": "Total Blocking Time (TBT): how long the page was blocked from responding to user input, measured by PageSpeed Insights on mobile. Under 200ms is good, over 600ms is poor.",
+      "source": "psi-vitals",
+      "metric": "total-blocking-time",
+      "chart": "stat",
+      "granularity": "hour",
+      "reduce": "last",
+      "unit": "ms",
+      "thresholds": [
+        {
+          "value": 0,
+          "color": "#73bf69"
+        },
+        {
+          "value": 200,
+          "color": "#f2cc0c"
+        },
+        {
+          "value": 600,
+          "color": "#f2495c"
+        }
+      ],
+      "refresh": 900,
+      "span": 4,
+      "section": "Health"
+    },
+    {
+      "title": "Gateway latency",
+      "description": "Average gateway response latency per minute, in milliseconds. Lower is better; investigate sustained upward shifts.",
+      "source": "gateway",
+      "metric": "latency_ms",
+      "chart": "area-step",
+      "granularity": "minute",
+      "reduce": "avg",
+      "unit": "ms",
+      "refresh": 60,
+      "span": 6,
+      "section": "Health"
+    },
+    {
+      "title": "Gateway requests/min",
+      "description": "Number of requests the gateway serves per minute. Baseline traffic context for the latency and error panels.",
+      "source": "gateway",
+      "metric": "requests_per_minute",
+      "chart": "line",
+      "granularity": "minute",
+      "reduce": "sum",
+      "refresh": 60,
+      "span": 6,
+      "section": "Health"
+    },
+    {
+      "title": "Gateway error rate",
+      "description": "Percentage of gateway requests that returned an error, averaged per minute. Under 1% is healthy, above 5% is critical.",
+      "source": "gateway",
+      "metric": "error_rate",
+      "chart": "stat",
+      "granularity": "minute",
+      "reduce": "avg",
+      "unit": "%",
+      "decimals": 1,
+      "thresholds": [
+        {
+          "value": 0,
+          "color": "#73bf69"
+        },
+        {
+          "value": 1,
+          "color": "#f2cc0c"
+        },
+        {
+          "value": 5,
+          "color": "#f2495c"
+        }
+      ],
+      "refresh": 60,
+      "span": 3,
+      "section": "Health"
+    },
+    {
+      "title": "Gateway CPU",
+      "description": "System CPU utilization of the gateway host, sampled every 10 seconds via node:os and averaged per minute. Amber past 70%, red past 85%.",
+      "source": "gateway",
+      "metric": "cpu_percent",
+      "chart": "gauge",
+      "granularity": "minute",
+      "reduce": "avg",
+      "unit": "%",
+      "min": 0,
+      "max": 100,
+      "thresholds": [
+        {
+          "value": 0,
+          "color": "#73bf69"
+        },
+        {
+          "value": 70,
+          "color": "#f2cc0c"
+        },
+        {
+          "value": 85,
+          "color": "#f2495c"
+        }
+      ],
+      "refresh": 60,
+      "span": 3,
+      "section": "Health"
+    },
+    {
+      "title": "Gateway RAM",
+      "description": "System memory utilization of the gateway host, sampled every 10 seconds via node:os and averaged per minute. Amber past 70%, red past 85%.",
+      "source": "gateway",
+      "metric": "ram_percent",
+      "chart": "gauge",
+      "granularity": "minute",
+      "reduce": "avg",
+      "unit": "%",
+      "min": 0,
+      "max": 100,
+      "thresholds": [
+        {
+          "value": 0,
+          "color": "#73bf69"
+        },
+        {
+          "value": 70,
+          "color": "#f2cc0c"
+        },
+        {
+          "value": 85,
+          "color": "#f2495c"
+        }
+      ],
+      "refresh": 60,
+      "span": 3,
+      "section": "Health"
+    },
+    {
+      "title": "Gateway uptime",
+      "description": "System uptime of the gateway host in seconds (os.uptime), sampled every 10 seconds and shown as the latest value.",
+      "source": "gateway",
+      "metric": "uptime_seconds",
+      "chart": "stat",
+      "granularity": "minute",
+      "reduce": "last",
+      "unit": "s",
+      "refresh": 60,
+      "span": 3,
+      "section": "Health"
     }
   ]
 }

@@ -23,6 +23,7 @@ export const useDashboardStore = defineStore('dashboard', () => {
   const configError = ref<string>()
   const timeRange = ref<TimeRange>('all')
   const globalRefresh = ref<number | undefined>(undefined)
+  const psiTargetUrl = ref<string | undefined>(undefined)
   const timers = new Map<number, ReturnType<typeof setInterval>>()
 
   const from = computed(() =>
@@ -111,12 +112,29 @@ export const useDashboardStore = defineStore('dashboard', () => {
     timers.clear()
   }
 
+  async function loadSettings() {
+    try {
+      const settings = await trpc.dashboard.settings.query()
+      psiTargetUrl.value = settings.psiTargetUrl
+    } catch {
+      psiTargetUrl.value = undefined
+    }
+  }
+
+  async function savePsiTargetUrl(url: string) {
+    const value = url.trim() || undefined
+    psiTargetUrl.value = value
+    await trpc.dashboard.setSettings.mutate({ psiTargetUrl: value })
+    await refetchAll()
+  }
+
   return {
     panels,
     panelState,
     configError,
     timeRange,
     globalRefresh,
+    psiTargetUrl,
     sections,
     loadConfig,
     fetchPanel,
@@ -124,6 +142,8 @@ export const useDashboardStore = defineStore('dashboard', () => {
     startPolling,
     setGlobalRefresh,
     setTimeRange,
-    stopPolling
+    stopPolling,
+    loadSettings,
+    savePsiTargetUrl
   }
 })

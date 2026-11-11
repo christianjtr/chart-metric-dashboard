@@ -47,7 +47,7 @@ describe('NdjsonAdapter', () => {
     const result = await adapter.getSeries({
       source: 'test-errors',
       metric: 'count',
-      granularity: 'year'
+      granularity: 'year', reduce: 'sum'
     })
 
     expect(result.series).toEqual([
@@ -81,7 +81,7 @@ describe('NdjsonAdapter', () => {
     const result = await legacyAdapter.getSeries({
       source: 'platform-errors',
       metric: 'count',
-      granularity: 'year'
+      granularity: 'year', reduce: 'sum'
     })
 
     const years = result.series[0].points.map((p) => new Date(p.x).getUTCFullYear()).sort()
