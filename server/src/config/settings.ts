@@ -1,6 +1,6 @@
 import fs from 'node:fs'
-import path from 'node:path'
 import { z } from 'zod'
+import { resolveRootFile } from './paths'
 
 export const DashboardSettingsSchema = z.object({
   psiTargetUrl: z.string().url().optional()
@@ -8,7 +8,7 @@ export const DashboardSettingsSchema = z.object({
 
 export type DashboardSettings = z.infer<typeof DashboardSettingsSchema>
 
-const settingsPath = (): string => path.resolve(process.env.DASHBOARD_SETTINGS ?? 'dashboard.settings.json')
+const settingsPath = (): string => resolveRootFile('DASHBOARD_SETTINGS', 'dashboard.settings.json')
 
 export const loadSettings = (): DashboardSettings => {
   const absolute = settingsPath()

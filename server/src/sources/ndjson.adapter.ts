@@ -10,14 +10,16 @@ type NdjsonSource = z.infer<typeof NdjsonSourceSchema>
 
 export class NdjsonAdapter implements SourceAdapter {
   readonly source: NdjsonSource
+  private readonly baseDir: string
 
-  constructor(source: NdjsonSource) {
+  constructor(source: NdjsonSource, baseDir?: string) {
     this.source = source
+    this.baseDir = baseDir ?? process.cwd()
   }
 
   async getSeries(query: SeriesQueryInput): Promise<SeriesResponse> {
     const { date, series, value, dateFormat } = this.source.mapping
-    const absolutePath = path.resolve(this.source.path)
+    const absolutePath = path.resolve(this.baseDir, this.source.path)
 
     const lines = fs.readFileSync(absolutePath, 'utf8').split('\n')
     const events: EventRow[] = []

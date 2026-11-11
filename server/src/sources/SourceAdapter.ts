@@ -14,11 +14,11 @@ export interface SourceAdapter {
 
 export const createAdapter = (
   source: Source,
-  deps: { collector?: MetricsCollector } = {}
+  deps: { collector?: MetricsCollector; baseDir?: string } = {}
 ): SourceAdapter => {
   switch (source.adapter) {
     case 'ndjson':
-      return new NdjsonAdapter(source)
+      return new NdjsonAdapter(source, deps.baseDir)
     case 'rest':
       return new RestAdapter(source)
     case 'internal': {

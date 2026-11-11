@@ -1,5 +1,7 @@
+import path from 'node:path'
 import { initTRPC, TRPCError } from '@trpc/server'
 import { loadConfig } from '../config/loadConfig'
+import { resolveRootFile } from '../config/paths'
 import { DashboardSettingsSchema, loadSettings, saveSettings } from '../config/settings'
 import { SeriesQuerySchema, SeriesResponseSchema } from '../schemas/series'
 import { createAdapter } from '../sources/SourceAdapter'
@@ -7,7 +9,8 @@ import { metricsCollector } from '../metrics/collector'
 
 const t = initTRPC.create()
 
-const CONFIG_PATH = process.env.DASHBOARD_CONFIG ?? 'dashboard.config.json'
+const CONFIG_PATH = resolveRootFile('DASHBOARD_CONFIG', 'dashboard.config.json')
+const CONFIG_DIR = path.dirname(CONFIG_PATH)
 
 const timed = t.middleware(async ({ path, next }) => {
   const start = Date.now()
@@ -48,7 +51,7 @@ export const appRouter = t.router({
       .input(SeriesQuerySchema)
       .output(SeriesResponseSchema)
       .query(async ({ input }) => {
-        const adapter = createAdapter(getSource(input.source), { collector: metricsCollector })
+        const adapter = createAdapter(getSource(input.source), { collector: metricsCollector, baseDir: CONFIG_DIR })
         return adapter.getSeries(input)
       })
   })
