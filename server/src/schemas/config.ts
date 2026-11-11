@@ -42,7 +42,7 @@ export const SourceSchema = z.discriminatedUnion('adapter', [
 
 export type Source = z.infer<typeof SourceSchema>
 
-export const ChartTypeSchema = z.enum(['area-step', 'bar', 'line', 'stat', 'gauge'])
+export const ChartTypeSchema = z.enum(['area-step', 'bar', 'line', 'stat', 'sparkstat', 'table'])
 export type ChartType = z.infer<typeof ChartTypeSchema>
 
 export const GranularitySchema = z.enum(['minute', 'hour', 'day', 'week', 'month', 'year'])
@@ -59,6 +59,7 @@ const ThresholdSchema = z.object({
 export const PanelSchema = z.object({
   title: z.string().min(1),
   description: z.string().max(400).optional(),
+  lowerIsBetter: z.boolean().optional(),
   source: z.string().min(1),
   metric: z.string().min(1).default('count'),
   chart: ChartTypeSchema,

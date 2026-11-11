@@ -4,7 +4,8 @@ import { useDashboardStore, type PanelState, type TimeRange } from './stores/das
 import type { Panel } from '@server/schemas/config'
 import PanelChart from './components/PanelChart.vue'
 import StatPanel from './components/StatPanel.vue'
-import GaugePanel from './components/GaugePanel.vue'
+import SparkStatPanel from './components/SparkStatPanel.vue'
+import TablePanel from './components/TablePanel.vue'
 
 const store = useDashboardStore()
 
@@ -114,8 +115,15 @@ onBeforeUnmount(() => store.stopPolling())
                   :loading="stateAt(index)?.loading"
                   :error="stateAt(index)?.error"
                 />
-                <GaugePanel
-                  v-else-if="panelAt(index).chart === 'gauge'"
+                <SparkStatPanel
+                  v-else-if="panelAt(index).chart === 'sparkstat'"
+                  :panel="panelAt(index)"
+                  :data="stateAt(index)?.series"
+                  :loading="stateAt(index)?.loading"
+                  :error="stateAt(index)?.error"
+                />
+                <TablePanel
+                  v-else-if="panelAt(index).chart === 'table'"
                   :panel="panelAt(index)"
                   :data="stateAt(index)?.series"
                   :loading="stateAt(index)?.loading"

@@ -3,18 +3,19 @@ import 'vuetify/styles'
 
 export default createVuetify({
   theme: {
-    defaultTheme: 'grafanaDark',
+    defaultTheme: 'sentryDark',
     themes: {
-      grafanaDark: {
+      sentryDark: {
         dark: true,
         colors: {
-          background: '#111217',
-          surface: '#181b1f',
-          primary: '#3274d9',
-          secondary: '#585f6d',
-          error: '#f2495c',
-          success: '#73bf69',
-          warning: '#f2cc0c'
+          background: '#12121a',
+          surface: '#1c1c26',
+          primary: '#7a6ff0',
+          secondary: '#8b8fa3',
+          error: '#e5544b',
+          success: '#4fac6e',
+          warning: '#e0a12f',
+          info: '#3e8ff7'
         }
       }
     }
