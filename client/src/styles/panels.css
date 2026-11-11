@@ -1,5 +1,5 @@
 .panel-card {
-  border: thin solid rgba(var(--v-theme-on-surface), 0.14);
+  border: thin solid rgba(var(--v-theme-on-surface), 0.12);
   border-radius: 8px;
 }
 
@@ -8,7 +8,7 @@
   align-items: center;
   gap: 8px;
   min-width: 0;
-  padding: 14px 12px 2px 16px;
+  padding: 10px 12px 0 14px;
 }
 
 .panel-card-title {
@@ -16,7 +16,7 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-size: 0.9375rem;
+  font-size: 0.875rem;
   font-weight: 500;
   line-height: 1.5;
   color: rgba(var(--v-theme-on-surface), 0.92);
@@ -24,4 +24,9 @@
 
 .panel-card-text {
   padding-top: 8px;
+  min-height: 140px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
 }

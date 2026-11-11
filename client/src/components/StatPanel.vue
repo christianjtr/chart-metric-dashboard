@@ -4,7 +4,9 @@ import type { Panel } from '@server/schemas/config'
 import type { NamedSeries } from '@server/schemas/series'
 import { formatValue } from '../utils/format'
 import { colorFor } from '../utils/thresholds'
+import { deltaInfo } from '../utils/delta'
 import PanelDescription from './PanelDescription.vue'
+import DeltaChip from './DeltaChip.vue'
 
 const props = defineProps<{
   panel: Panel
@@ -24,6 +26,16 @@ const display = computed(() =>
 const color = computed(() =>
   current.value === undefined ? undefined : colorFor(current.value, props.panel.thresholds)
 )
+
+const delta = computed(() => {
+  const points = props.data?.[0]?.points
+  if (!points) return undefined
+  return deltaInfo(points, {
+    unit: props.panel.unit,
+    title: props.panel.title,
+    lowerIsBetter: props.panel.lowerIsBetter
+  })
+})
 </script>
 
 <template>
@@ -37,16 +49,18 @@ const color = computed(() =>
     <v-alert v-if="props.error" type="error" variant="tonal" class="mx-4">
       {{ props.error }}
     </v-alert>
-    <v-card-text class="d-flex align-center justify-center" style="height: 320px">
+    <v-card-text class="panel-card-text">
       <span class="stat-value" :style="{ color }">{{ display }}</span>
+      <DeltaChip v-if="delta" :delta="delta" class="mt-2" />
     </v-card-text>
   </v-card>
 </template>
 
 <style scoped>
 .stat-value {
-  font-size: 4rem;
+  font-size: 2.2rem;
   font-weight: 600;
   font-variant-numeric: tabular-nums;
+  line-height: 1.1;
 }
 </style>

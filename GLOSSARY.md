@@ -71,3 +71,19 @@ _Avoid_: preferences, options, runtime config
 **Cache TTL**:
 Seconds a REST Source reuses the last successful fetch for an identical final URL before hitting the origin again.
 _Avoid_: cache time, expiry, memoization
+
+**Sparkstat**:
+A Panel type combining a threshold-colored value with a minimal sparkline of its Series and a delta chip comparing the last two points. Replaced the gauge.
+_Avoid_: gauge, speedometer, kpi card
+
+**Delta Chip**:
+The ▲/▼ badge showing percent change between the last two points of a Series, colored by whether the metric improved according to Lower Is Better.
+_Avoid_: trend badge, variation chip
+
+**Lower Is Better**:
+Optional Panel flag declaring that decreasing values are an improvement (latency, error rate, CPU). Defaults to true except for score-like units and request counts.
+_Avoid_: direction, trend direction
+
+**Table Panel**:
+A Panel type rendering one dense row per named Series instead of a chart; used for the PSI audits list.
+_Avoid_: data table, grid

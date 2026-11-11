@@ -26,9 +26,9 @@ describe('loadConfig', () => {
     const config = loadConfig(path.join(ROOT, 'dashboard.config.json'))
     expect(config.panels[0].reduce).toBe('sum')
     expect(config.panels[0].span).toBe(6)
-    const gauge = config.panels.find((p) => p.chart === 'gauge')
-    expect(gauge?.thresholds?.length).toBeGreaterThan(0)
-    expect(gauge?.min).toBe(0)
+    const sparkstat = config.panels.find((p) => p.chart === 'sparkstat')
+    expect(sparkstat?.thresholds?.length).toBeGreaterThan(0)
+    expect(sparkstat?.min).toBe(0)
   })
 
   it('rejects invalid config shapes', () => {
