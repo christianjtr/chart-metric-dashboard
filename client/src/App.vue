@@ -6,24 +6,16 @@ import PanelChart from './components/PanelChart.vue'
 import StatPanel from './components/StatPanel.vue'
 import SparkStatPanel from './components/SparkStatPanel.vue'
 import TablePanel from './components/TablePanel.vue'
+import SectionPanel from './components/SectionPanel.vue'
 
 const store = useDashboardStore()
 
 const panelAt = (index: number): Panel => store.panels[index]
 const stateAt = (index: number): PanelState | undefined => store.panelState[index]
 
-const TIME_RANGES: Array<{ label: string; value: TimeRange }> = [
-  { label: 'All time', value: 'all' },
-  { label: 'Last hour', value: '1h' },
-  { label: 'Last 2 hours', value: '2h' }
-]
-
-const REFRESH_OPTIONS: Array<{ label: string; value?: number }> = [
-  { label: 'Per panel', value: undefined },
-  { label: '10s', value: 10 },
-  { label: '30s', value: 30 },
-  { label: '60s', value: 60 }
-]
+const setRefresh = (value: string | number) => {
+  store.setGlobalRefresh(value === 'panel' ? undefined : Number(value))
+}
 
 const settingsDialog = ref(false)
 const settingsUrl = ref('')
@@ -53,34 +45,35 @@ onBeforeUnmount(() => store.stopPolling())
 
 <template>
   <v-app>
-    <v-app-bar color="primary">
-      <v-app-bar-title>Chart Dashboard</v-app-bar-title>
-      <v-select
+    <v-app-bar flat border>
+      <v-app-bar-title class="app-title">Vitalscope</v-app-bar-title>
+      <v-btn-toggle
         :model-value="store.timeRange"
-        :items="TIME_RANGES"
-        item-title="label"
-        item-value="value"
-        label="Time range"
-        hide-details
+        mandatory
         density="compact"
         variant="outlined"
-        max-width="160"
-        class="mr-4"
+        divided
+        class="mr-3"
         @update:model-value="store.setTimeRange($event as TimeRange)"
-      />
-      <v-select
-        :model-value="store.globalRefresh"
-        :items="REFRESH_OPTIONS"
-        item-title="label"
-        item-value="value"
-        label="Refresh"
-        hide-details
+      >
+        <v-btn value="all" size="small">All</v-btn>
+        <v-btn value="1h" size="small">1H</v-btn>
+        <v-btn value="2h" size="small">2H</v-btn>
+      </v-btn-toggle>
+      <v-btn-toggle
+        :model-value="store.globalRefresh ?? 'panel'"
+        mandatory
         density="compact"
         variant="outlined"
-        max-width="140"
-        class="mr-4"
-        @update:model-value="store.setGlobalRefresh($event as number | undefined)"
-      />
+        divided
+        class="mr-3"
+        @update:model-value="setRefresh($event as string | number)"
+      >
+        <v-btn value="panel" size="small">Panel</v-btn>
+        <v-btn :value="10" size="small">10s</v-btn>
+        <v-btn :value="30" size="small">30s</v-btn>
+        <v-btn :value="60" size="small">60s</v-btn>
+      </v-btn-toggle>
       <v-btn variant="text" aria-label="Settings" @click="openSettings">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
           <path
@@ -97,10 +90,12 @@ onBeforeUnmount(() => store.stopPolling())
         </v-alert>
 
         <template v-else>
-          <template v-for="section in store.sections" :key="section.name ?? 'all'">
-            <h2 v-if="section.name" class="text-h6 text-medium-emphasis mt-6 mb-2">
-              {{ section.name }}
-            </h2>
+          <SectionPanel
+            v-for="section in store.sections"
+            :key="section.name ?? 'all'"
+            :name="section.name"
+            class="mt-4"
+          >
             <v-row dense>
               <v-col
                 v-for="index in section.indices"
@@ -138,7 +133,7 @@ onBeforeUnmount(() => store.stopPolling())
                 />
               </v-col>
             </v-row>
-          </template>
+          </SectionPanel>
         </template>
       </v-container>
     </v-main>
@@ -173,3 +168,9 @@ onBeforeUnmount(() => store.stopPolling())
     </v-dialog>
   </v-app>
 </template>
+
+<style scoped>
+.app-title {
+  font-weight: 600;
+}
+</style>

@@ -30,3 +30,25 @@
   align-items: center;
   justify-content: center;
 }
+
+.section-panel {
+  background: rgba(var(--v-theme-surface), 0.55);
+  border: thin solid rgba(var(--v-theme-on-surface), 0.12);
+  border-radius: 8px;
+  padding: 14px 16px 16px;
+}
+
+.section-panel-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.section-panel-title {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: rgba(var(--v-theme-on-surface), 0.6);
+}
