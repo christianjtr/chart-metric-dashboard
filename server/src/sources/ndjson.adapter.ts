@@ -2,7 +2,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { aggregate, parseDate, type EventRow } from '../aggregate/aggregate'
 import type { NdjsonSourceSchema } from '../schemas/config'
-import type { SeriesQuery, SeriesResponse } from '../schemas/series'
+import type { SeriesQueryInput, SeriesResponse } from '../schemas/series'
 import type { SourceAdapter } from './SourceAdapter'
 import type { z } from 'zod'
 
@@ -15,7 +15,7 @@ export class NdjsonAdapter implements SourceAdapter {
     this.source = source
   }
 
-  async getSeries(query: SeriesQuery): Promise<SeriesResponse> {
+  async getSeries(query: SeriesQueryInput): Promise<SeriesResponse> {
     const { date, series, value, dateFormat } = this.source.mapping
     const absolutePath = path.resolve(this.source.path)
 
@@ -39,12 +39,12 @@ export class NdjsonAdapter implements SourceAdapter {
 
     return {
       sourceId: this.source.id,
-      metric: query.metric,
-      granularity: query.granularity,
+      metric: query.metric ?? 'count',
+      granularity: query.granularity ?? 'day',
       series: aggregate(events, {
-        granularity: query.granularity,
+        granularity: query.granularity ?? 'day',
         groupBy: query.groupBy,
-        reduce: query.reduce
+        reduce: query.reduce ?? 'sum'
       })
     }
   }

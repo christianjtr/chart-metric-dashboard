@@ -32,3 +32,4 @@ export const SeriesQuerySchema = z.object({
 })
 
 export type SeriesQuery = z.infer<typeof SeriesQuerySchema>
+export type SeriesQueryInput = z.input<typeof SeriesQuerySchema>

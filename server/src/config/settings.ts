@@ -1,0 +1,30 @@
+import fs from 'node:fs'
+import path from 'node:path'
+import { z } from 'zod'
+
+export const DashboardSettingsSchema = z.object({
+  psiTargetUrl: z.string().url().optional()
+})
+
+export type DashboardSettings = z.infer<typeof DashboardSettingsSchema>
+
+const settingsPath = (): string => path.resolve(process.env.DASHBOARD_SETTINGS ?? 'dashboard.settings.json')
+
+export const loadSettings = (): DashboardSettings => {
+  const absolute = settingsPath()
+  if (!fs.existsSync(absolute)) return {}
+  try {
+    return DashboardSettingsSchema.parse(JSON.parse(fs.readFileSync(absolute, 'utf8')))
+  } catch {
+    return {}
+  }
+}
+
+export const saveSettings = (settings: DashboardSettings): DashboardSettings => {
+  const parsed = DashboardSettingsSchema.parse(settings)
+  fs.writeFileSync(settingsPath(), JSON.stringify(parsed, null, 2))
+  return parsed
+}
+
+export const resolveSetting = (key: string): string | undefined =>
+  loadSettings()[key as keyof DashboardSettings]

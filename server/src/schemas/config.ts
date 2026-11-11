@@ -4,7 +4,8 @@ const MappingSchema = z.object({
   date: z.string().min(1),
   value: z.string().optional(),
   series: z.string().optional(),
-  dateFormat: z.string().optional()
+  dateFormat: z.string().optional(),
+  scale: z.number().optional()
 })
 
 export const NdjsonSourceSchema = z.object({
@@ -22,12 +23,21 @@ export const RestSourceSchema = z.object({
   url: z.string().url(),
   refresh: z.number().int().positive().optional(),
   headers: z.record(z.string()).optional(),
+  params: z.record(z.string()).optional(),
+  cacheTtl: z.number().int().positive().optional(),
   mapping: MappingSchema
+})
+
+export const InternalSourceSchema = z.object({
+  adapter: z.literal('internal'),
+  id: z.string().min(1),
+  label: z.string().min(1)
 })
 
 export const SourceSchema = z.discriminatedUnion('adapter', [
   NdjsonSourceSchema,
-  RestSourceSchema
+  RestSourceSchema,
+  InternalSourceSchema
 ])
 
 export type Source = z.infer<typeof SourceSchema>
@@ -48,6 +58,7 @@ const ThresholdSchema = z.object({
 
 export const PanelSchema = z.object({
   title: z.string().min(1),
+  description: z.string().max(400).optional(),
   source: z.string().min(1),
   metric: z.string().min(1).default('count'),
   chart: ChartTypeSchema,

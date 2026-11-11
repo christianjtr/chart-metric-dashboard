@@ -1,5 +1,11 @@
-import { describe, it, expect, vi } from 'vitest'
-import { RestAdapter } from './rest.adapter'
+import { afterEach, beforeEach, describe, it, expect, vi } from 'vitest'
+import { RestAdapter, clearFetchCache } from './rest.adapter'
+import { metricsCollector, MetricsCollector } from '../metrics/collector'
+import { InternalAdapter } from './internal.adapter'
+
+vi.mock('../config/settings', () => ({
+  loadSettings: vi.fn(() => ({ psiTargetUrl: 'https://site.example.com' }))
+}))
 
 const PAYLOAD = {
   items: [
@@ -9,7 +15,7 @@ const PAYLOAD = {
   ]
 }
 
-const fetcher = vi.fn(async () => PAYLOAD)
+const fetcher = vi.fn(async (_url: string, _headers: Record<string, string>) => PAYLOAD)
 
 const source = {
   adapter: 'rest' as const,
@@ -69,7 +75,7 @@ describe('RestAdapter', () => {
     const result = await adapter.getSeries({
       source: 'ext',
       metric: 'count',
-      granularity: 'day'
+      granularity: 'day', reduce: 'sum'
     })
     expect(result.series).toEqual([{ name: 'total', points: [{ x: Date.UTC(2026, 4, 1), y: 9 }] }])
   })
@@ -85,5 +91,155 @@ describe('RestAdapter', () => {
     return expect(
       mixed.getSeries({ source: 'ext', metric: 'count', granularity: 'day' })
     ).rejects.toThrow(/same collection/i)
+  })
+
+  describe('params', () => {
+    beforeEach(() => clearFetchCache())
+
+    it('appends plain, env and setting params to the URL', async () => {
+      process.env.MY_TOKEN = 'tok-1'
+      const adapter = new RestAdapter(
+        {
+          ...source,
+          params: { url: 'setting:psiTargetUrl', key: 'env:MY_TOKEN', strategy: 'mobile' }
+        },
+        fetcher
+      )
+      await adapter.getSeries({ source: 'ext', metric: 'count', granularity: 'day' })
+      const calledUrl = String(fetcher.mock.lastCall?.[0])
+      expect(calledUrl).toContain('url=https%3A%2F%2Fsite.example.com')
+      expect(calledUrl).toContain('key=tok-1')
+      expect(calledUrl).toContain('strategy=mobile')
+    })
+
+    it('throws when a setting param is not configured', () => {
+      const adapter = new RestAdapter(
+        { ...source, params: { url: 'setting:missingKey' } },
+        fetcher
+      )
+      return expect(
+        adapter.getSeries({ source: 'ext', metric: 'count', granularity: 'day' })
+      ).rejects.toThrow(/Unresolved parameter "url"/)
+    })
+  })
+
+  describe('cacheTtl', () => {
+    beforeEach(() => {
+      clearFetchCache()
+      vi.useFakeTimers()
+    })
+    afterEach(() => vi.useRealTimers())
+
+    it('coalesces repeated fetches within the TTL and refetches after expiry', async () => {
+      vi.setSystemTime(new Date('2026-06-01T00:00:00Z'))
+      const lazyFetcher = vi.fn(async () => PAYLOAD)
+      const makeAdapter = () =>
+        new RestAdapter({ ...source, url: 'https://api.example.com/cached', cacheTtl: 60 }, lazyFetcher)
+
+      await makeAdapter().getSeries({ source: 'ext', metric: 'count', granularity: 'day' })
+      await makeAdapter().getSeries({ source: 'ext', metric: 'count', granularity: 'month' })
+      expect(lazyFetcher).toHaveBeenCalledTimes(1)
+
+      vi.setSystemTime(new Date('2026-06-01T00:02:00Z'))
+      await makeAdapter().getSeries({ source: 'ext', metric: 'count', granularity: 'day' })
+      expect(lazyFetcher).toHaveBeenCalledTimes(2)
+    })
+  })
+
+  it('scales mapped values (score 0-1 to 0-100)', async () => {
+    const adapter = new RestAdapter(
+      {
+        ...source,
+        url: 'https://api.example.com/score',
+        mapping: { date: 'summary.date', value: 'summary.score', scale: 100 }
+      },
+      async () => ({ summary: { date: '2026-05-01T00:00:00Z', score: 0.87 } })
+    )
+    const result = await adapter.getSeries({ source: 'ext', metric: 'score', granularity: 'hour' })
+    expect(result.series).toEqual([{ name: 'total', points: [{ x: Date.UTC(2026, 4, 1), y: 87 }] }])
+  })
+
+  it('dates "now" snapshots with the fetch time', async () => {
+    const adapter = new RestAdapter(
+      {
+        ...source,
+        url: 'https://api.example.com/snapshot',
+        mapping: { date: 'now', value: 'summary.score' }
+      },
+      async () => ({ summary: { score: 5 } })
+    )
+    const withoutFilter = await adapter.getSeries({ source: 'ext', metric: 'score', granularity: 'minute' })
+    expect(withoutFilter.series).toHaveLength(1)
+
+    const excludedByFutureFrom = await adapter.getSeries({
+      source: 'ext',
+      metric: 'score',
+      granularity: 'minute',
+      from: Date.now() + 60_000
+    })
+    expect(excludedByFutureFrom.series).toEqual([])
+  })
+})
+
+describe('MetricsCollector', () => {
+  beforeEach(() => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date('2026-06-01T00:00:05Z'))
+  })
+  afterEach(() => vi.useRealTimers())
+
+  it('buffers requests into windows and flushes latency/error/throughput on sample', () => {
+    const collector = new MetricsCollector({ autostart: false })
+    collector.observeRequest('sources.series', true, 100)
+    collector.observeRequest('sources.series', false, 300)
+    vi.setSystemTime(new Date('2026-06-01T00:00:15Z'))
+    collector.sample()
+    const latency = collector.getMetric('latency_ms')
+    expect(latency).toHaveLength(1)
+    expect(latency[0].value).toBe(200)
+    expect(collector.getMetric('error_rate')[0].value).toBe(50)
+    expect(collector.getMetric('requests_per_minute')[0].value).toBe(2)
+  })
+
+  it('flushes only closed windows and samples system metrics', () => {
+    const collector = new MetricsCollector({ autostart: false })
+    collector.observeRequest('sources.series', true, 50)
+    collector.sample()
+    expect(collector.getMetric('requests_per_minute')).toHaveLength(0)
+    expect(collector.getMetric('ram_percent')[0].value).toBeGreaterThan(0)
+    expect(collector.getMetric('uptime_seconds')[0].value).toBeGreaterThan(0)
+    expect(collector.getMetric('cpu_percent')[0].value).toBeGreaterThanOrEqual(0)
+  })
+
+  it('keeps a bounded ring buffer per metric', () => {
+    const collector = new MetricsCollector({ autostart: false, capacity: 3 })
+    for (let i = 0; i < 5; i++) collector.push('cpu_percent', i)
+    expect(collector.getMetric('cpu_percent').map((s) => s.value)).toEqual([2, 3, 4])
+  })
+})
+
+describe('InternalAdapter', () => {
+  it('turns collector samples into aggregated series', async () => {
+    const collector = new MetricsCollector({ autostart: false })
+    collector.push('latency_ms', 10, Date.UTC(2026, 5, 1, 0, 0, 10))
+    collector.push('latency_ms', 30, Date.UTC(2026, 5, 1, 0, 0, 40))
+    const adapter = new InternalAdapter({ adapter: 'internal', id: 'gateway', label: 'Gateway' }, collector)
+
+    const result = await adapter.getSeries({
+      source: 'gateway',
+      metric: 'latency_ms',
+      granularity: 'minute',
+      reduce: 'avg'
+    })
+    expect(result.series).toEqual([{ name: 'total', points: [{ x: Date.UTC(2026, 5, 1, 0, 0), y: 20 }] }])
+  })
+
+  it('returns empty series for unknown metrics', async () => {
+    const adapter = new InternalAdapter(
+      { adapter: 'internal', id: 'gateway', label: 'Gateway' },
+      metricsCollector
+    )
+    const result = await adapter.getSeries({ source: 'gateway', metric: 'nope', granularity: 'minute' })
+    expect(result.series).toEqual([])
   })
 })
