@@ -108,6 +108,11 @@
       "unit": "pts",
       "min": 0,
       "max": 100,
+      "reference": {
+        "healthy": "90–100 pts",
+        "source": "Google Lighthouse",
+        "url": "https://developer.chrome.com/docs/lighthouse/overview/"
+      },
       "thresholds": [
         { "value": 0, "color": "#f2495c" },
         { "value": 50, "color": "#f2cc0c" },
@@ -127,6 +132,11 @@
       "granularity": "hour",
       "reduce": "last",
       "unit": "ms",
+      "reference": {
+        "healthy": "≤ 2.5 s",
+        "source": "Google web.dev",
+        "url": "https://web.dev/articles/lcp/"
+      },
       "thresholds": [
         { "value": 0, "color": "#73bf69" },
         { "value": 2500, "color": "#f2cc0c" },
@@ -146,6 +156,11 @@
       "granularity": "hour",
       "reduce": "last",
       "unit": "ms",
+      "reference": {
+        "healthy": "≤ 200 ms",
+        "source": "Google Lighthouse",
+        "url": "https://developer.chrome.com/docs/lighthouse/performance/total-blocking-time/"
+      },
       "thresholds": [
         { "value": 0, "color": "#73bf69" },
         { "value": 200, "color": "#f2cc0c" },
@@ -192,6 +207,11 @@
       "reduce": "avg",
       "unit": "%",
       "decimals": 1,
+      "reference": {
+        "healthy": "< 1 %",
+        "source": "Google SRE Workbook",
+        "url": "https://sre.google/workbook/implementing-slos/"
+      },
       "thresholds": [
         { "value": 0, "color": "#73bf69" },
         { "value": 1, "color": "#f2cc0c" },

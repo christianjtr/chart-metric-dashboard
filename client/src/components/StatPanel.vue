@@ -6,6 +6,7 @@ import { formatValue } from '../utils/format'
 import { colorFor } from '../utils/thresholds'
 import { deltaInfo } from '../utils/delta'
 import PanelDescription from './PanelDescription.vue'
+import PanelReference from './PanelReference.vue'
 import DeltaChip from './DeltaChip.vue'
 
 const props = defineProps<{
@@ -54,6 +55,7 @@ const delta = computed(() => {
     <v-card-text v-else class="panel-card-text">
       <span class="stat-value" :style="{ color }">{{ display }}</span>
       <DeltaChip v-if="delta" :delta="delta" class="mt-2" />
+      <PanelReference :reference="props.panel.reference" />
     </v-card-text>
   </v-card>
 </template>

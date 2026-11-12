@@ -56,10 +56,19 @@ const ThresholdSchema = z.object({
   value: z.number()
 })
 
+export const ReferenceSchema = z.object({
+  healthy: z.string().min(1),
+  source: z.string().min(1),
+  url: z.string().url().optional()
+})
+
+export type PanelReference = z.infer<typeof ReferenceSchema>
+
 export const PanelSchema = z.object({
   title: z.string().min(1),
   description: z.string().max(400).optional(),
   lowerIsBetter: z.boolean().optional(),
+  reference: ReferenceSchema.optional(),
   source: z.string().min(1),
   metric: z.string().min(1).default('count'),
   chart: ChartTypeSchema,

@@ -10,6 +10,7 @@ import { formatValue } from '../utils/format'
 import { colorFor } from '../utils/thresholds'
 import { deltaInfo } from '../utils/delta'
 import PanelDescription from './PanelDescription.vue'
+import PanelReference from './PanelReference.vue'
 import DeltaChip from './DeltaChip.vue'
 
 echarts.use([LineChart, CanvasRenderer])
@@ -113,6 +114,7 @@ onBeforeUnmount(() => {
     <v-card-text v-else class="panel-card-text">
       <span class="sparkstat-value" :style="{ color }">{{ display }}</span>
       <DeltaChip v-if="delta" :delta="delta" class="mt-2" />
+      <PanelReference :reference="props.panel.reference" />
       <div v-if="hasData" ref="chartEl" class="sparkstat-spark" />
     </v-card-text>
   </v-card>

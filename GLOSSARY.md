@@ -111,3 +111,7 @@ _Avoid_: onboarding banner, warning
 **Sample Fallback**:
 The PSI behavior of returning day-seeded synthetic vitals with `sample: true` when `PAGESPEED_API_KEY` is not configured, instead of failing the request.
 _Avoid_: mock mode, demo mode
+
+**Healthy Reference**:
+The official healthy value or range for a Panel's metric (e.g. LCP ≤ 2.5 s), displayed under the current value and cited with its source link (web.dev, Lighthouse, SRE Workbook). Declared in Config via the `reference` field.
+_Avoid_: target, SLO, benchmark
