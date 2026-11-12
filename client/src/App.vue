@@ -1,12 +1,13 @@
 <script setup lang="ts">
-import { onBeforeUnmount, onMounted, ref } from 'vue'
-import { useDashboardStore, type PanelState, type TimeRange } from './stores/dashboard'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { useDashboardStore, type PanelState, type StatusLevel, type TimeRange } from './stores/dashboard'
 import type { Panel } from '@server/schemas/config'
 import PanelChart from './components/PanelChart.vue'
 import StatPanel from './components/StatPanel.vue'
 import SparkStatPanel from './components/SparkStatPanel.vue'
 import TablePanel from './components/TablePanel.vue'
 import SectionPanel from './components/SectionPanel.vue'
+import StatusRow from './components/StatusRow.vue'
 
 const store = useDashboardStore()
 
@@ -17,19 +18,49 @@ const setRefresh = (value: string | number) => {
   store.setGlobalRefresh(value === 'panel' ? undefined : Number(value))
 }
 
+const STATUS_TEXT: Record<Exclude<StatusLevel, 'unknown'>, string> = {
+  ok: 'All systems operational',
+  degraded: 'Degraded performance',
+  outage: 'Service outage'
+}
+
+const STATUS_COLOR = {
+  ok: 'success',
+  degraded: 'warning',
+  outage: 'error'
+} as const
+
+const overall = computed(() => {
+  const level = store.statusOverall
+  if (level === 'unknown') return undefined
+  return { level, text: STATUS_TEXT[level], color: STATUS_COLOR[level] }
+})
+
+const toastVisible = ref(false)
+const toastText = computed(() => store.toast)
+watch(
+  () => store.toast,
+  (message) => {
+    if (message) toastVisible.value = true
+  }
+)
+
 const settingsDialog = ref(false)
 const settingsUrl = ref('')
+const settingsApiKey = ref('')
+const aboutDialog = ref(false)
 const savingSettings = ref(false)
 
 function openSettings() {
   settingsUrl.value = store.psiTargetUrl ?? ''
+  settingsApiKey.value = store.psiApiKey ?? ''
   settingsDialog.value = true
 }
 
 async function saveSettings() {
   savingSettings.value = true
   try {
-    await store.savePsiTargetUrl(settingsUrl.value)
+    await store.savePsiTargetUrl(settingsUrl.value, settingsApiKey.value)
     settingsDialog.value = false
   } finally {
     savingSettings.value = false
@@ -74,6 +105,13 @@ onBeforeUnmount(() => store.stopPolling())
         <v-btn :value="30" size="small">30s</v-btn>
         <v-btn :value="60" size="small">60s</v-btn>
       </v-btn-toggle>
+      <v-btn variant="text" aria-label="About Vitalscope" @click="aboutDialog = true">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2" />
+          <rect x="11" y="10.5" width="2" height="6" rx="1" fill="currentColor" />
+          <circle cx="12" cy="7.6" r="1.3" fill="currentColor" />
+        </svg>
+      </v-btn>
       <v-btn variant="text" aria-label="Settings" @click="openSettings">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
           <path
@@ -85,18 +123,43 @@ onBeforeUnmount(() => store.stopPolling())
 
     <v-main>
       <v-container fluid>
-        <v-alert v-if="store.configError" type="error" variant="tonal" class="mt-4">
-          {{ store.configError }}
-        </v-alert>
+        <template v-if="store.configError">
+          <div class="empty-state">
+            <p class="empty-state-title">Vitalscope couldn't load its configuration</p>
+            <p class="empty-state-text">{{ store.configError }}</p>
+          </div>
+        </template>
 
         <template v-else>
+          <v-banner
+            v-if="store.showSampleBanner"
+            color="info"
+            variant="tonal"
+            class="sample-banner mt-4"
+          >
+            You're viewing sample data — connect your data source to see live metrics. Add your PageSpeed API key in&nbsp;<strong>Settings</strong>&nbsp;and data sources in&nbsp;<code>dashboard.config.json</code>.
+            <template #actions>
+              <v-btn variant="text" @click="store.dismissSampleBanner">Dismiss</v-btn>
+            </template>
+          </v-banner>
+
+          <v-banner
+            v-if="overall"
+            :color="overall.color"
+            variant="tonal"
+            class="mt-4"
+          >
+            {{ overall.text }}
+          </v-banner>
+
           <SectionPanel
             v-for="section in store.sections"
             :key="section.name ?? 'all'"
             :name="section.name"
+            :description="section.description"
             class="mt-4"
           >
-            <v-row dense>
+            <v-row density="compact">
               <v-col
                 v-for="index in section.indices"
                 :key="index"
@@ -109,6 +172,7 @@ onBeforeUnmount(() => store.stopPolling())
                   :data="stateAt(index)?.series"
                   :loading="stateAt(index)?.loading"
                   :error="stateAt(index)?.error"
+                  :sample="stateAt(index)?.sample"
                 />
                 <SparkStatPanel
                   v-else-if="panelAt(index).chart === 'sparkstat'"
@@ -116,6 +180,7 @@ onBeforeUnmount(() => store.stopPolling())
                   :data="stateAt(index)?.series"
                   :loading="stateAt(index)?.loading"
                   :error="stateAt(index)?.error"
+                  :sample="stateAt(index)?.sample"
                 />
                 <TablePanel
                   v-else-if="panelAt(index).chart === 'table'"
@@ -123,6 +188,15 @@ onBeforeUnmount(() => store.stopPolling())
                   :data="stateAt(index)?.series"
                   :loading="stateAt(index)?.loading"
                   :error="stateAt(index)?.error"
+                  :sample="stateAt(index)?.sample"
+                />
+                <StatusRow
+                  v-else-if="panelAt(index).chart === 'statusbar'"
+                  :panel="panelAt(index)"
+                  :data="stateAt(index)?.series"
+                  :loading="stateAt(index)?.loading"
+                  :error="stateAt(index)?.error"
+                  :sample="stateAt(index)?.sample"
                 />
                 <PanelChart
                   v-else
@@ -130,6 +204,7 @@ onBeforeUnmount(() => store.stopPolling())
                   :data="stateAt(index)?.series"
                   :loading="stateAt(index)?.loading"
                   :error="stateAt(index)?.error"
+                  :sample="stateAt(index)?.sample"
                 />
               </v-col>
             </v-row>
@@ -148,8 +223,18 @@ onBeforeUnmount(() => store.stopPolling())
             hide-details
             variant="outlined"
           />
+          <v-text-field
+            v-model="settingsApiKey"
+            label="PageSpeed Insights API key"
+            placeholder="PAGESPEED_API_KEY"
+            type="password"
+            hide-details
+            variant="outlined"
+            class="mt-3"
+          />
           <div class="text-caption text-medium-emphasis mt-2">
-            Used by the PSI panels. Requires PAGESPEED_API_KEY in the gateway environment.
+            Used by the PSI panels. The key is applied immediately — panels switch from sample to
+            live data without a restart.
           </div>
         </v-card-text>
         <v-card-actions>
@@ -166,11 +251,50 @@ onBeforeUnmount(() => store.stopPolling())
         </v-card-actions>
       </v-card>
     </v-dialog>
+
+    <v-dialog v-model="aboutDialog" max-width="480">
+      <v-card title="Vitalscope">
+        <v-card-text>
+          <p class="mb-2">
+            <strong>Vitalscope</strong> — Web Vitals &amp; Gateway Health
+          </p>
+          <p class="text-body-2 text-medium-emphasis">
+            A config-driven dashboard for Core Web Vitals and gateway health. Panels, sections and
+            data sources are defined in <code>dashboard.config.json</code>; uptime strips are
+            built from in-gateway probes. When no API key is configured, panels fall back to
+            clearly-marked sample data.
+          </p>
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer />
+          <v-btn color="primary" text @click="aboutDialog = false">Close</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
+    <v-snackbar v-model="toastVisible" :timeout="5000" color="error" location="bottom right">
+      {{ toastText }}
+    </v-snackbar>
   </v-app>
 </template>
 
 <style scoped>
 .app-title {
   font-weight: 600;
+}
+
+.empty-state {
+  margin-top: 48px;
+  text-align: center;
+}
+
+.empty-state-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.empty-state-text {
+  margin-top: 4px;
+  color: rgba(var(--v-theme-on-surface), 0.6);
 }
 </style>

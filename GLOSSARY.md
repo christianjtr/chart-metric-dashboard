@@ -87,3 +87,27 @@ _Avoid_: direction, trend direction
 **Table Panel**:
 A Panel type rendering one dense row per named Series instead of a chart; used for the PSI audits list.
 _Avoid_: data table, grid
+
+**Statusbar**:
+A Panel type rendering a BetterStack-style uptime strip: one colored segment per minute bucket of the last 2 hours, plus a headline uptime percentage. Green (≥99), amber (≥95), red otherwise.
+_Avoid_: uptime bar, availability strip
+
+**Status Overall**:
+The worst status across all statusbar Panels (ok, degraded, outage), computed client-side and shown as the global status banner. Unknown when no probe data exists yet.
+_Avoid_: health score, system status
+
+**Probe**:
+A synthetic gateway uptime sample recorded into the minute-bucket ring for a statusbar Panel. Seeded for 2 hours at startup and advanced live; not persisted.
+_Avoid_: ping, heartbeat, check
+
+**Sample Data**:
+Clearly flagged synthetic series the Gateway returns when real data is unavailable (no PSI key, empty collector buffers at startup). Marked with `sample: true` on the response and a "Sample" chip on the Panel.
+_Avoid_: mock data, fake data, demo data
+
+**Sample Banner**:
+The dismissible banner shown while any Panel renders Sample Data, pointing to Settings for the API key and to the Dashboard Config for data sources. Dismissal persists in localStorage.
+_Avoid_: onboarding banner, warning
+
+**Sample Fallback**:
+The PSI behavior of returning day-seeded synthetic vitals with `sample: true` when `PAGESPEED_API_KEY` is not configured, instead of failing the request.
+_Avoid_: mock mode, demo mode

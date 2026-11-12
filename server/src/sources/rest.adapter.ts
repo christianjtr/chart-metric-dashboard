@@ -1,6 +1,6 @@
 import { aggregate, parseDate, type EventRow } from '../aggregate/aggregate'
 import { extractCollection, extractPath } from './extract'
-import { loadSettings } from '../config/settings'
+import { loadSettings, type DashboardSettings } from '../config/settings'
 import type { RestSourceSchema } from '../schemas/config'
 import type { SeriesQueryInput, SeriesResponse } from '../schemas/series'
 import type { Fetcher, SourceAdapter } from './SourceAdapter'
@@ -9,6 +9,25 @@ import type { z } from 'zod'
 type RestSource = z.infer<typeof RestSourceSchema>
 
 const WILDCARD = '[]'
+
+const hashSeed = (input: string): number => {
+  let h = 2166136261
+  for (let i = 0; i < input.length; i++) {
+    h ^= input.charCodeAt(i)
+    h = Math.imul(h, 16777619)
+  }
+  return h >>> 0
+}
+
+const mulberry32 = (seed: number): (() => number) => {
+  let a = seed
+  return () => {
+    a = (a + 0x6d2b79f5) | 0
+    let t = Math.imul(a ^ (a >>> 15), 1 | a)
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296
+  }
+}
 
 interface FetchCacheEntry {
   at: number
@@ -55,7 +74,10 @@ const splitMapping = (
 }
 
 const resolveParamValue = (value: string): string | undefined => {
-  if (value.startsWith('setting:')) return loadSettings()[value.slice('setting:'.length) as 'psiTargetUrl']
+  if (value.startsWith('setting:')) {
+    const name = value.slice('setting:'.length)
+    return loadSettings()[name as keyof DashboardSettings] ?? process.env[name]
+  }
   if (value.startsWith('env:')) return process.env[value.slice('env:'.length)]
   return value
 }
@@ -103,7 +125,78 @@ export class RestAdapter implements SourceAdapter {
     return response.json()
   }
 
+  private isPsiSource(): boolean {
+    return this.source.url.includes('pagespeedonline')
+  }
+
+  private psiKey(): string | undefined {
+    const raw = this.source.params?.key
+    if (!raw) return undefined
+    if (raw.startsWith('setting:') || raw.startsWith('env:')) return resolveParamValue(raw)
+    return raw
+  }
+
+  private syntheticVitals(query: SeriesQueryInput): SeriesResponse {
+    const metric = query.metric ?? 'count'
+    const rng = mulberry32(hashSeed(`${this.source.id}:${metric}:${new Date().toISOString().slice(0, 10)}`))
+    const now = Date.now()
+    const from = query.from ?? now - 24 * 3_600_000
+    const step = 3_600_000
+    const first = Math.ceil(from / step) * step
+
+    const pointsFor = (min: number, max: number): Array<{ x: number; y: number }> => {
+      const points: Array<{ x: number; y: number }> = []
+      for (let t = first; t <= now; t += step) {
+        points.push({ x: t, y: Math.round((min + rng() * (max - min)) * 1000) / 1000 })
+      }
+      points.push({ x: now, y: Math.round((min + rng() * (max - min)) * 1000) / 1000 })
+      return points
+    }
+
+    const auditRanges: Record<string, [number, number]> = {
+      'first-contentful-paint': [900, 1600],
+      'largest-contentful-paint': [1300, 2400],
+      'total-blocking-time': [90, 280],
+      'cumulative-layout-shift': [0.01, 0.09],
+      'speed-index': [1300, 2800],
+      interactive: [1900, 3600]
+    }
+
+    let series
+    if (metric === 'audits') {
+      series = Object.entries(auditRanges).map(([name, [min, max]]) => ({
+        name,
+        points: pointsFor(min, max)
+      }))
+    } else if (/^probe:.+:uptime$/.test(metric)) {
+      const step = 60_000
+      const startOfMinute = Math.floor(now / step) * step
+      const points: Array<{ x: number; y: number }> = []
+      for (let i = 120; i >= 1; i--) {
+        const t = startOfMinute - i * step
+        const uptime = rng() > 0.94 ? 90 + rng() * 8 : 99 + rng()
+        points.push({ x: t, y: Math.round(Math.min(100, uptime) * 1000) / 1000 })
+      }
+      series = [{ name: metric, points }]
+    } else {
+      const [min, max] = auditRanges[metric] ?? (metric === 'performance' ? [86, 96] : [40, 80])
+      series = [{ name: metric, points: pointsFor(min, max) }]
+    }
+
+    return {
+      sourceId: this.source.id,
+      metric,
+      granularity: query.granularity ?? 'day',
+      sample: true,
+      series
+    }
+  }
+
   async getSeries(query: SeriesQueryInput): Promise<SeriesResponse> {
+    if (this.isPsiSource() && !this.psiKey()) {
+      return this.syntheticVitals(query)
+    }
+
     const payload = await fetchWithCache(this.source, this.fetcher)
     const { collectionPath, fields } = splitMapping(this.source.mapping)
 

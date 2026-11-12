@@ -9,26 +9,26 @@ describe('loadConfig', () => {
   it('loads and validates the root dashboard config', () => {
     const config = loadConfig(path.join(ROOT, 'dashboard.config.json'))
     expect(config.sources.length).toBeGreaterThanOrEqual(2)
-    expect(config.sources[0].id).toBe('platform-errors')
+    expect(config.sections?.map((s) => s.name)).toEqual(['Status', 'Health'])
     expect(config.panels.length).toBeGreaterThanOrEqual(2)
-    expect(config.panels[0].granularity).toBe('day')
-    expect(config.panels[0].refresh).toBe(60)
+    expect(config.panels[0].granularity).toBe('minute')
+    expect(config.panels[0].refresh).toBe(10)
   })
 
   it('applies panel defaults (metric, granularity, refresh)', () => {
     const config = loadConfig(path.join(ROOT, 'dashboard.config.json'))
     const secondPanel = config.panels[1]
-    expect(secondPanel.refresh).toBe(60)
-    expect(secondPanel.metric).toBe('count')
+    expect(secondPanel.refresh).toBe(10)
+    expect(secondPanel.metric).toBe('probe:psi-vitals:uptime')
   })
 
   it('defaults new panel display fields for backward compatibility', () => {
     const config = loadConfig(path.join(ROOT, 'dashboard.config.json'))
-    expect(config.panels[0].reduce).toBe('sum')
-    expect(config.panels[0].span).toBe(6)
     const sparkstat = config.panels.find((p) => p.chart === 'sparkstat')
     expect(sparkstat?.thresholds?.length).toBeGreaterThan(0)
     expect(sparkstat?.min).toBe(0)
+    const statusbar = config.panels.find((p) => p.chart === 'statusbar')
+    expect(statusbar?.section).toBe('Status')
   })
 
   it('rejects invalid config shapes', () => {

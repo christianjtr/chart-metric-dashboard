@@ -17,7 +17,9 @@ const timed = t.middleware(async ({ path, next }) => {
   try {
     return await next()
   } finally {
-    metricsCollector.observeRequest(path, true, Date.now() - start)
+    const duration = Date.now() - start
+    metricsCollector.observeRequest(path, true, duration)
+    metricsCollector.observeProbe('gateway', true, duration)
   }
 })
 
@@ -37,7 +39,7 @@ export const appRouter = t.router({
   dashboard: t.router({
     config: publicProcedure.query(() => {
       const config = loadConfig(CONFIG_PATH)
-      return { panels: config.panels }
+      return { sections: config.sections ?? [], panels: config.panels }
     }),
     settings: publicProcedure.query(() => loadSettings()),
     setSettings: publicProcedure.input(DashboardSettingsSchema).mutation(({ input }) => saveSettings(input))
@@ -52,7 +54,15 @@ export const appRouter = t.router({
       .output(SeriesResponseSchema)
       .query(async ({ input }) => {
         const adapter = createAdapter(getSource(input.source), { collector: metricsCollector, baseDir: CONFIG_DIR })
-        return adapter.getSeries(input)
+        const start = Date.now()
+        try {
+          const response = await adapter.getSeries(input)
+          metricsCollector.observeProbe(input.source, true, Date.now() - start)
+          return response
+        } catch (error) {
+          metricsCollector.observeProbe(input.source, false, Date.now() - start)
+          throw error
+        }
       })
   })
 })

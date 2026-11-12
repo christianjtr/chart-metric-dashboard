@@ -121,6 +121,70 @@ describe('RestAdapter', () => {
         adapter.getSeries({ source: 'ext', metric: 'count', granularity: 'day' })
       ).rejects.toThrow(/Unresolved parameter "url"/)
     })
+
+    it('falls back to the env var when the setting key is not configured', async () => {
+      process.env.PAGESPEED_API_KEY = 'env-key-1'
+      try {
+        const adapter = new RestAdapter(
+          { ...source, params: { key: 'setting:PAGESPEED_API_KEY' } },
+          fetcher
+        )
+        await adapter.getSeries({ source: 'ext', metric: 'count', granularity: 'day' })
+        expect(String(fetcher.mock.lastCall?.[0])).toContain('key=env-key-1')
+      } finally {
+        delete process.env.PAGESPEED_API_KEY
+      }
+    })
+
+    it('serves synthetic sample data for PSI sources without an API key', async () => {
+      const psiFetcher = vi.fn(async () => ({}))
+      const psi = new RestAdapter(
+        {
+          ...source,
+          id: 'psi-vitals',
+          url: 'https://www.googleapis.com/pagespeedonline/v5/runPagespeed',
+          params: { key: 'setting:PAGESPEED_API_KEY' },
+          mapping: { date: 'now', value: 'x' }
+        },
+        psiFetcher
+      )
+      const result = await psi.getSeries({
+        source: 'psi-vitals',
+        metric: 'largest-contentful-paint',
+        granularity: 'hour',
+        reduce: 'last'
+      })
+      expect(result.sample).toBe(true)
+      expect(result.series[0].name).toBe('largest-contentful-paint')
+      expect(result.series[0].points.length).toBeGreaterThan(0)
+      expect(psiFetcher).not.toHaveBeenCalled()
+    })
+
+    it('serves a healthy synthetic uptime probe for statusbar panels without an API key', async () => {
+      const psiFetcher = vi.fn(async () => ({}))
+      const psi = new RestAdapter(
+        {
+          ...source,
+          id: 'psi-vitals',
+          url: 'https://www.googleapis.com/pagespeedonline/v5/runPagespeed',
+          params: { key: 'setting:PAGESPEED_API_KEY' },
+          mapping: { date: 'now', value: 'x' }
+        },
+        psiFetcher
+      )
+      const result = await psi.getSeries({
+        source: 'psi-vitals',
+        metric: 'probe:psi-vitals:uptime',
+        granularity: 'minute',
+        reduce: 'avg'
+      })
+      expect(result.sample).toBe(true)
+      const points = result.series[0].points
+      expect(points.length).toBe(120)
+      const avg = points.reduce((sum, p) => sum + p.y, 0) / points.length
+      expect(avg).toBeGreaterThan(95)
+      expect(psiFetcher).not.toHaveBeenCalled()
+    })
   })
 
   describe('cacheTtl', () => {
@@ -241,5 +305,19 @@ describe('InternalAdapter', () => {
     )
     const result = await adapter.getSeries({ source: 'gateway', metric: 'nope', granularity: 'minute' })
     expect(result.series).toEqual([])
+  })
+
+  it('seeds synthetic probe history on first query without duplicating it', async () => {
+    const collector = new MetricsCollector({ autostart: false })
+    const adapter = new InternalAdapter({ adapter: 'internal', id: 'gateway', label: 'Gateway' }, collector)
+    const query = { source: 'gateway', metric: 'probe:gateway:uptime', granularity: 'minute' as const, reduce: 'avg' as const }
+
+    const first = await adapter.getSeries(query)
+    expect(first.series).toHaveLength(1)
+    expect(first.series[0].points.length).toBeGreaterThan(0)
+    expect(first.series[0].points.every((p) => p.y >= 0 && p.y <= 100)).toBe(true)
+
+    const second = await adapter.getSeries(query)
+    expect(second.series[0].points).toHaveLength(first.series[0].points.length)
   })
 })

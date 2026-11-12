@@ -13,6 +13,7 @@ const props = defineProps<{
   data?: NamedSeries[]
   loading?: boolean
   error?: string
+  sample?: boolean
 }>()
 
 const current = computed(() => props.data?.[0]?.points.at(-1)?.y)
@@ -43,13 +44,14 @@ const delta = computed(() => {
     <v-progress-linear :active="props.loading" color="primary" indeterminate />
     <v-card-title class="panel-card-header">
       <span class="panel-card-title">{{ props.panel.title }}</span>
+      <v-chip v-if="props.sample" size="x-small" color="info" variant="tonal" class="ml-2">Sample</v-chip>
       <v-spacer />
       <PanelDescription :description="props.panel.description" />
     </v-card-title>
-    <v-alert v-if="props.error" type="error" variant="tonal" class="mx-4">
-      {{ props.error }}
-    </v-alert>
-    <v-card-text class="panel-card-text">
+    <div v-if="props.error" class="panel-unavailable mx-4">
+      <span>{{ props.error }}</span>
+    </div>
+    <v-card-text v-else class="panel-card-text">
       <span class="stat-value" :style="{ color }">{{ display }}</span>
       <DeltaChip v-if="delta" :delta="delta" class="mt-2" />
     </v-card-text>

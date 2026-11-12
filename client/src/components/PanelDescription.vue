@@ -14,10 +14,10 @@ defineProps<{
         role="button"
         tabindex="0"
       >
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-          <path
-            d="M13 9h-2V7h2m0 2v6h-2m1-9a10 10 0 1 0 0 20 10 10 0 0 0 0-20Z"
-          />
+        <svg width="15" height="15" viewBox="0 0 24 24" aria-hidden="true">
+          <circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2" />
+          <rect x="11" y="10.5" width="2" height="6.5" rx="1" fill="currentColor" />
+          <circle cx="12" cy="7.4" r="1.5" fill="currentColor" />
         </svg>
       </span>
     </template>
