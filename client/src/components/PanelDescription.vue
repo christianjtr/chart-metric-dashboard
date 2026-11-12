@@ -29,15 +29,13 @@ defineProps<{
 .panel-description-trigger {
   display: inline-flex;
   align-items: center;
-  color: rgb(var(--v-theme-on-surface-variant));
-  opacity: 0.65;
+  color: #9aa0a6;
   cursor: help;
-  transition: opacity 0.15s ease;
+  transition: color 0.15s ease;
 }
 
 .panel-description-trigger:hover,
 .panel-description-trigger:focus-visible {
-  opacity: 1;
   color: rgb(var(--v-theme-primary));
 }
 </style>

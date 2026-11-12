@@ -43,7 +43,7 @@ const statusColor = computed(() => (uptime.value === undefined ? undefined : col
       <PanelDescription :description="props.panel.description" />
     </v-card-title>
     <div v-if="props.error" class="panel-unavailable mx-4">
-      <span>{{ props.error }}</span>
+      <span>Unavailable</span>
     </div>
     <v-card-text v-else class="statusrow-text">
       <div class="statusrow-strip" role="img" :aria-label="`${props.panel.title} uptime ${uptimeLabel}`">

@@ -36,6 +36,11 @@ const overall = computed(() => {
   return { level, text: STATUS_TEXT[level], color: STATUS_COLOR[level] }
 })
 
+const failedPanels = (indices: number[]) =>
+  indices
+    .map((index) => ({ title: panelAt(index).title, error: stateAt(index)?.error }))
+    .filter((item): item is { title: string; error: string } => item.error !== undefined)
+
 const toastVisible = ref(false)
 const toastText = computed(() => store.toast)
 watch(
@@ -159,7 +164,25 @@ onBeforeUnmount(() => store.stopPolling())
             :description="section.description"
             class="mt-4"
           >
-            <v-row density="compact">
+            <v-alert
+              v-if="failedPanels(section.indices).length"
+              type="error"
+              variant="tonal"
+              density="compact"
+              class="section-errors mb-4"
+            >
+              <div class="font-weight-medium">
+                {{ failedPanels(section.indices).length }} of {{ section.indices.length }} metrics
+                failed to load
+              </div>
+              <ul class="section-errors-list">
+                <li v-for="item in failedPanels(section.indices)" :key="item.title">
+                  <strong>{{ item.title }}</strong> — {{ item.error }}
+                </li>
+              </ul>
+            </v-alert>
+
+            <v-row class="panel-grid">
               <v-col
                 v-for="index in section.indices"
                 :key="index"
@@ -296,5 +319,14 @@ onBeforeUnmount(() => store.stopPolling())
 .empty-state-text {
   margin-top: 4px;
   color: rgba(var(--v-theme-on-surface), 0.6);
+}
+
+.panel-grid {
+  row-gap: 16px;
+}
+
+.section-errors-list {
+  margin: 4px 0 0;
+  padding-left: 18px;
 }
 </style>

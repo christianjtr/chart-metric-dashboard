@@ -102,7 +102,7 @@ onBeforeUnmount(() => {
       <PanelDescription :description="props.panel.description" />
     </v-card-title>
     <div v-if="props.error" class="panel-unavailable mx-4">
-      <span>{{ props.error }}</span>
+      <span>Unavailable</span>
     </div>
     <v-card-text v-else>
       <div ref="chartEl" style="height: 180px" />

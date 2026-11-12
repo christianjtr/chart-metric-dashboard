@@ -44,7 +44,7 @@ const display = (value?: number) =>
       <PanelDescription :description="props.panel.description" />
     </v-card-title>
     <div v-if="props.error" class="panel-unavailable mx-4">
-      <span>{{ props.error }}</span>
+      <span>Unavailable</span>
     </div>
     <v-card-text v-else>
       <v-table density="compact" class="panel-table">
