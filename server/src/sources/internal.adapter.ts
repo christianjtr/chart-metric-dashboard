@@ -17,8 +17,16 @@ export class InternalAdapter implements SourceAdapter {
   }
 
   async getSeries(query: SeriesQueryInput): Promise<SeriesResponse> {
-    const events: EventRow[] = (query.metric ? this.collector.getMetric(query.metric) : [])
+    const metric = query.metric ?? 'count'
+    let events: EventRow[] = this.collector.getMetric(metric)
       .map(({ t, value }) => ({ date: t, value, series: 'value' }))
+
+    const probeMatch = metric.match(/^probe:([a-z0-9-]+):/)
+    if (events.length === 0 && probeMatch) {
+      this.collector.seedProbe(probeMatch[1])
+      events = this.collector.getMetric(metric)
+        .map(({ t, value }) => ({ date: t, value, series: 'value' }))
+    }
 
     return {
       sourceId: this.source.id,

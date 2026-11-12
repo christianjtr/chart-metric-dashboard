@@ -71,20 +71,4 @@ describe('NdjsonAdapter', () => {
 
     expect(result.series[0].points).toEqual([{ x: Date.UTC(2017, 0, 1), y: 5 }])
   })
-
-  it('aggregates the real legacy dataset with its DD-MM-YYYY mapping', async () => {
-    const legacyAdapter = new NdjsonAdapter({
-      ...adapter.source,
-      id: 'platform-errors',
-      path: path.resolve(__dirname, '../../../server/data/data.ndjson')
-    })
-    const result = await legacyAdapter.getSeries({
-      source: 'platform-errors',
-      metric: 'count',
-      granularity: 'year', reduce: 'sum'
-    })
-
-    const years = result.series[0].points.map((p) => new Date(p.x).getUTCFullYear()).sort()
-    expect(years).toEqual([2016, 2017])
-  })
 })

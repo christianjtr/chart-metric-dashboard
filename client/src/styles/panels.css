@@ -33,16 +33,27 @@
 
 .section-panel {
   background: rgba(var(--v-theme-surface), 0.55);
-  border: thin solid rgba(var(--v-theme-on-surface), 0.12);
   border-radius: 8px;
   padding: 14px 16px 16px;
 }
 
 .section-panel-header {
   display: flex;
-  align-items: center;
+  align-items: baseline;
   gap: 8px;
   margin-bottom: 10px;
+}
+
+.section-panel-heading {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  min-width: 0;
+}
+
+.section-panel-description {
+  font-size: 0.8125rem;
+  color: rgba(var(--v-theme-on-surface), 0.6);
 }
 
 .section-panel-title {

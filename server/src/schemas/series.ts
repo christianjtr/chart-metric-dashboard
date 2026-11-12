@@ -15,6 +15,7 @@ export const SeriesResponseSchema = z.object({
   sourceId: z.string(),
   metric: z.string(),
   granularity: GranularitySchema,
+  sample: z.boolean().optional(),
   series: z.array(NamedSeriesSchema)
 })
 

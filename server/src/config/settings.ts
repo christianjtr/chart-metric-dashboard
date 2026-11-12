@@ -3,7 +3,8 @@ import { z } from 'zod'
 import { resolveRootFile } from './paths'
 
 export const DashboardSettingsSchema = z.object({
-  psiTargetUrl: z.string().url().optional()
+  psiTargetUrl: z.string().url().optional(),
+  PAGESPEED_API_KEY: z.string().min(1).optional()
 })
 
 export type DashboardSettings = z.infer<typeof DashboardSettingsSchema>
