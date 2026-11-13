@@ -4,26 +4,31 @@ Vitalscope is a self-hosted status page and health dashboard for a web platform:
 
 ![Vitalscope dashboard](docs/screenshot.png)
 
-## Motivation
+## Contents
 
-This project started as a charting exercise (see [the original brief](#original-project-charting-exercise) at the bottom) and grew into a real dashboard when each chart stopped being a demo and started answering a question: *is the site healthy right now, and by how much?*
+1. [Use case: monitor an e-commerce](#use-case-monitor-an-e-commerce)
+2. [Step 1 — Run it (2 min)](#step-1--run-it-2-min)
+3. [Step 2 — Connect your website](#step-2--connect-your-website)
+4. [Step 3 — Connect your apps](#step-3--connect-your-apps)
+5. [Integration example: shop-api](#integration-example-shop-api)
+6. [Customize panels](#customize-panels)
+7. [Motivation](#motivation)
+8. [Architecture](#architecture)
+9. [Technologies](#technologies)
+10. [Original project (charting exercise)](#original-project-charting-exercise)
 
-The design goals that followed:
+## Use case: monitor an e-commerce
 
-- **Declarative, not hardcoded** — every Panel, Source and threshold lives in a single `dashboard.config.json`, shared by both the client and the Gateway.
-- **Trustworthy numbers** — every value carries its context: a healthy reference (e.g. *LCP ≤ 2.5 s*) with a cited source, thresholds with Grafana semantics, and a Delta Chip showing whether the last change was an improvement.
-- **Zero-config observability** — a backend should be able to send its metrics with one line of code, and the dashboard should figure out the rest (Auto Panels).
+You run an online store with a web storefront and a Node.js checkout API. You want one screen — not four tools — answering:
 
-## Features
+- **Is the site up right now?** → the STATUS section shows per-minute uptime strips for the site (probed via PageSpeed) and the gateway, with a global banner when anything degrades.
+- **How does it feel for real users?** → the HEALTH section shows Core Web Vitals from Lighthouse (lab) and the Chrome UX Report (Field Data), with each value colored good/warn/poor against the official thresholds.
+- **Is the checkout backend healthy?** → `shop-api` reports its own metrics (checkout latency, queue depth, cache hit ratio) through the ingest endpoint; panels for them appear automatically.
+- **Is anything broken at all?** → panel errors are aggregated into a single app-bar popover, so a down source never leaves you staring at empty panels.
 
-- **Status page** — Better Stack-style uptime strips (one colored segment per minute bucket, last 2 hours) with a global status banner computed as the worst status across probes.
-- **Health panels** — four panel types: `stat`, `sparkstat` (value + sparkline + delta chip), `chart` (line/bar series), and `table`.
-- **Web Vitals** — PSI *lab* data (Lighthouse) and *Field Data (CrUX)*, rendered as curated Web Vitals Tables: detected value colored good/warn/poor, recommended value, and cited source (web.dev, Lighthouse).
-- **Plug-and-play ingest** — `POST /ingest` with a token; Connected Apps report metrics with drop-in browser/Node agents, and panels are auto-created for every new metric (Auto Panels).
-- **Sample data fallback** — when a Source has no data yet (no PSI API key, empty buffers), the Gateway returns clearly flagged Sample Data instead of an empty dashboard.
-- **Dark theme** — a custom `sentryDark` Vuetify theme (surface `#1c1c26`, primary `#7a6ff0`) tuned for long monitoring sessions.
+One dashboard, three data paths, zero agents to configure by hand.
 
-## Getting started
+## Step 1 — Run it (2 min)
 
 Requires [Node.js](https://nodejs.org/) and [NPM](https://www.npmjs.com/).
 
@@ -31,13 +36,10 @@ Requires [Node.js](https://nodejs.org/) and [NPM](https://www.npmjs.com/).
 git clone https://github.com/christianjtr/chart-metric-dashboard.git
 cd chart-metric-dashboard
 npm install
-```
-
-Run the Gateway (Express + tRPC, port 3000) and the dashboard (Vite, port 5173):
-
-```shell
 npm run dev
 ```
+
+Open `http://localhost:5173`. The dashboard starts immediately on **Sample Data** (clearly flagged with a `Sample` chip) — nothing else to configure.
 
 Build and tests:
 
@@ -46,11 +48,17 @@ npm run build --workspace client   # vue-tsc + vite production build
 npm run test --workspace server    # vitest (62 tests)
 ```
 
-Optional: set `PAGESPEED_API_KEY` in the environment (or in `dashboard.settings.json` via Settings → PageSpeed) to fetch real PSI data; without it the dashboard runs on Sample Data.
+## Step 2 — Connect your website
 
-## Sending metrics from your apps
+1. Open the dashboard, click the **gear icon → PageSpeed** tab.
+2. Enter the public URL of your site (e.g. `https://shop.example.com`), or set `PAGESPEED_API_KEY` in the environment for real user data.
+3. Save. The PSI panels refresh with your site's lab metrics; if the site has enough Chrome UX Report traffic, the **Core Web Vitals (field data)** table fills in too.
 
-1. In the dashboard UI, open **Settings → Ingest** and generate an Ingest Token (the endpoint is disabled with a `503` until a token exists).
+## Step 3 — Connect your apps
+
+Any frontend or backend can become a **Connected App** by reporting metrics to `POST /ingest`:
+
+1. Click the **gear icon → Ingest** tab and **generate an Ingest Token** (the endpoint answers `503` until a token exists; wrong tokens get `403`).
 2. Report metrics over HTTP from anywhere:
 
 ```shell
@@ -58,6 +66,8 @@ curl -X POST http://localhost:3000/ingest \
   -H "Authorization: Bearer <INGEST_TOKEN>" \
   -H "Content-Type: application/json" \
   -d '{"app":"shop-api","metrics":[{"name":"checkout_latency_ms","value":132}]}'
+
+# → 202 {"ok":true,"accepted":1,"rejected":0}
 ```
 
 3. Or drop in the zero-dependency agents:
@@ -75,7 +85,68 @@ const vitalscope = initVitalscope({ app: 'shop-api', url: 'http://localhost:3000
 vitalscope.metric('queue_depth', 7)
 ```
 
-Every pushed metric is namespaced as `<app>.<name>` and, if no Panel is declared for it, appears automatically as an Auto Panel in the **Connected apps** section (with an "Auto" chip). Declaring a panel for the same metric in `dashboard.config.json` shadows the Auto Panel.
+Every pushed metric is namespaced as `<app>.<name>`. Panels for new metrics appear **automatically** as Auto Panels in the **Connected apps** section (with an "Auto" chip) — no config edits needed.
+
+## Integration example: shop-api
+
+The repo ships a runnable simulation of the e-commerce backend above — it uses the real Node agent and pushes business metrics every 5 seconds:
+
+```shell
+VITALSCOPE_TOKEN=<INGEST_TOKEN> node examples/shop-api.mjs
+```
+
+What it does:
+
+1. Loads the same agent a production backend would use (`agent/node/vitalscope-node.js`), configured via `VITALSCOPE_URL`, `VITALSCOPE_TOKEN` and `VITALSCOPE_APP` (all optional, with sensible defaults).
+2. Simulates checkout latency (drifting 40–800 ms), queue depth (drifting integers) and cache hit ratio (60–100 %) with realistic noise, and reports them as `shop-api.checkout_latency_ms`, `shop-api.queue_depth`, `shop-api.cache_hit_pct`.
+3. Pushes the agent's own process metrics too (`rss_mb`, `heap_used_mb`, `event_loop_lag_ms`) — six panels total appear under **Connected apps** within seconds:
+
+```
+✓ pushed 6 metrics (queue=4, latency=169 ms, cache=92.0 %)
+```
+
+4. **Keep the dashboard open while it runs** and watch the Auto Panels appear and drift.
+5. If you stop the script, the Auto Panels keep showing the last reported values (staleness handling — e.g. marking metrics as unknown after they stop arriving — is on the roadmap).
+
+To make one of those panels permanent (instead of synthesized on the fly), declare it in config — see below.
+
+## Customize panels
+
+Panels, sources and thresholds live in `dashboard.config.json`, shared by both layers. Example of a declared panel for a pushed metric:
+
+```json
+{
+  "title": "Checkout latency",
+  "description": "Latency of the checkout endpoint, as reported by the shop-api connected app.",
+  "source": "pushed",
+  "metric": "shop-api.checkout_latency_ms",
+  "chart": "sparkstat",
+  "granularity": "minute",
+  "reduce": "avg",
+  "unit": "ms",
+  "refresh": 60,
+  "span": 3,
+  "section": "Connected apps",
+  "lowerIsBetter": true,
+  "thresholds": [
+    { "color": "#4fac6e", "value": 0 },
+    { "color": "#e0a12f", "value": 300 },
+    { "color": "#e5544b", "value": 600 }
+  ]
+}
+```
+
+A declared panel on the same metric shadows its Auto Panel; auto panels are never written to config.
+
+## Motivation
+
+This project started as a charting exercise (see [the original brief](#original-project-charting-exercise) at the bottom) and grew into a real dashboard when each chart stopped being a demo and started answering a question: *is the site healthy right now, and by how much?*
+
+The design goals that followed:
+
+- **Declarative, not hardcoded** — every Panel, Source and threshold lives in a single `dashboard.config.json`, shared by both the client and the Gateway.
+- **Trustworthy numbers** — every value carries its context: a healthy reference (e.g. *LCP ≤ 2.5 s*) with a cited source, thresholds with Grafana semantics, and a Delta Chip showing whether the last change was an improvement.
+- **Zero-config observability** — a backend should be able to send its metrics with one line of code, and the dashboard should figure out the rest (Auto Panels).
 
 ## Architecture
 
@@ -95,6 +166,7 @@ chart-metric-dashboard/
 │       ├── config/         # config/settings loading, Auto Panels synthesis
 │       └── routes/         # /ingest, /agent/*, REST passthroughs
 ├── agent/                  # Drop-in browser and Node agents
+├── examples/               # Runnable integrations (examples/shop-api.mjs)
 ├── dashboard.config.json   # Sources + Panels (committed)
 └── dashboard.settings.json # Runtime settings (git-ignored)
 ```
