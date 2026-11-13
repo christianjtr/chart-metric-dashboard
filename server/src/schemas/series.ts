@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { GranularitySchema, ReduceSchema } from './config'
+import { GranularitySchema, ReduceSchema } from './config.js'
 
 export const SeriesPointSchema = z.object({
   x: z.number(),

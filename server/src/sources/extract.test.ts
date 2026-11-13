@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { extractCollection, extractPath } from './extract'
+import { extractCollection, extractPath } from './extract.js'
 
 describe('extractPath', () => {
   const payload = {

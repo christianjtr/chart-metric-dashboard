@@ -2,7 +2,7 @@ import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 import { afterAll, describe, expect, it } from 'vitest'
-import { resolveRootFile } from './paths'
+import { resolveRootFile } from './paths.js'
 
 // npm workspaces: scripts run with cwd = server/, so the repo root is one level up
 const ROOT = path.resolve(process.cwd(), '..')

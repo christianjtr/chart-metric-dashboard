@@ -1,9 +1,9 @@
-import { aggregate, parseDate, type EventRow } from '../aggregate/aggregate'
-import { extractCollection, extractPath } from './extract'
-import { loadSettings, type DashboardSettings } from '../config/settings'
-import type { RestSourceSchema } from '../schemas/config'
-import type { SeriesQueryInput, SeriesResponse } from '../schemas/series'
-import type { Fetcher, SourceAdapter } from './SourceAdapter'
+import { aggregate, parseDate, type EventRow } from '../aggregate/aggregate.js'
+import { extractCollection, extractPath } from './extract.js'
+import { loadSettings, type DashboardSettings } from '../config/settings.js'
+import type { RestSourceSchema } from '../schemas/config.js'
+import type { SeriesQueryInput, SeriesResponse } from '../schemas/series.js'
+import type { Fetcher, SourceAdapter } from './SourceAdapter.js'
 import type { z } from 'zod'
 
 type RestSource = z.infer<typeof RestSourceSchema>
