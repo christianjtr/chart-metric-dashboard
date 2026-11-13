@@ -1,6 +1,6 @@
 import fs from 'node:fs'
 import { z } from 'zod'
-import { resolveRootFile } from './paths'
+import { resolveRootFile } from './paths.js'
 
 export const DashboardSettingsSchema = z.object({
   psiTargetUrl: z.string().url().optional(),

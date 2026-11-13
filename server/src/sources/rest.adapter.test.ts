@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, it, expect, vi } from 'vitest'
-import { RestAdapter, clearFetchCache } from './rest.adapter'
-import { metricsCollector, MetricsCollector } from '../metrics/collector'
-import { InternalAdapter } from './internal.adapter'
+import { RestAdapter, clearFetchCache } from './rest.adapter.js'
+import { metricsCollector, MetricsCollector } from '../metrics/collector.js'
+import { InternalAdapter } from './internal.adapter.js'
 
 vi.mock('../config/settings', () => ({
   loadSettings: vi.fn(() => ({ psiTargetUrl: 'https://site.example.com' }))

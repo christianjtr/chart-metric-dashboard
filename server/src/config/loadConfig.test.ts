@@ -1,6 +1,6 @@
 import path from 'node:path'
 import { describe, it, expect } from 'vitest'
-import { loadConfig } from './loadConfig'
+import { loadConfig } from './loadConfig.js'
 
 // npm workspaces: scripts run with cwd = server/, so the repo root is one level up
 const ROOT = path.resolve(process.cwd(), '..')

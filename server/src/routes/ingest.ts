@@ -1,8 +1,8 @@
 import crypto from 'node:crypto'
 import express from 'express'
-import { IngestPayloadSchema } from '../schemas/ingest'
-import { loadSettings, type DashboardSettings } from '../config/settings'
-import { metricsCollector, type MetricsCollector } from '../metrics/collector'
+import { IngestPayloadSchema } from '../schemas/ingest.js'
+import { loadSettings, type DashboardSettings } from '../config/settings.js'
+import { metricsCollector, type MetricsCollector } from '../metrics/collector.js'
 
 export interface IngestDeps {
   collector: MetricsCollector

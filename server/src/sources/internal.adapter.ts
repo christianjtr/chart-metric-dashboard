@@ -1,8 +1,8 @@
-import { aggregate, type EventRow } from '../aggregate/aggregate'
-import type { InternalSourceSchema } from '../schemas/config'
-import type { SeriesQueryInput, SeriesResponse } from '../schemas/series'
-import type { SourceAdapter } from './SourceAdapter'
-import type { MetricsCollector } from '../metrics/collector'
+import { aggregate, type EventRow } from '../aggregate/aggregate.js'
+import type { InternalSourceSchema } from '../schemas/config.js'
+import type { SeriesQueryInput, SeriesResponse } from '../schemas/series.js'
+import type { SourceAdapter } from './SourceAdapter.js'
+import type { MetricsCollector } from '../metrics/collector.js'
 import type { z } from 'zod'
 
 type InternalSource = z.infer<typeof InternalSourceSchema>
