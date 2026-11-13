@@ -4,6 +4,16 @@ Vitalscope is a self-hosted status page and health dashboard for a web platform:
 
 ![Vitalscope dashboard](docs/screenshot.png)
 
+## New to Telemetry? (A 1-Minute Primer)
+
+If you are new to observability, think of your web application as a car. You wouldn't drive on the highway without a dashboard showing your speed, fuel level, and check-engine light. **Telemetry** is simply the act of collecting those signals from your app and displaying them on a screen so you can catch problems before your users do.
+
+Vitalscope collects these signals in two ways:
+1. **Outside-in (PageSpeed / RUM):** Like a mechanic inspecting your car from the outside. It measures how fast your website actually loads and feels for your users.
+2. **Inside-out (Connected Apps / Ingest):** Like the car's internal computer. Your backend or frontend explicitly sends messages to Vitalscope saying things like *"My checkout queue has 5 items"* or *"I am using 50MB of RAM"*.
+
+*Confused by terms like RUM, Ingest, or Series? Check out our simple **[Glossary of Terms](docs/GLOSSARY.md)**.*
+
 ## Contents
 
 1. [Use case: monitor an e-commerce](#use-case-monitor-an-e-commerce)
