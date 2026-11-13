@@ -1,9 +1,9 @@
 import fs from 'node:fs'
 import path from 'node:path'
-import { aggregate, parseDate, type EventRow } from '../aggregate/aggregate.js'
-import type { NdjsonSourceSchema } from '../schemas/config.js'
-import type { SeriesQueryInput, SeriesResponse } from '../schemas/series.js'
-import type { SourceAdapter } from './SourceAdapter.js'
+import { aggregate, parseDate, type EventRow } from '../aggregate/aggregate'
+import type { NdjsonSourceSchema } from '../schemas/config'
+import type { SeriesQueryInput, SeriesResponse } from '../schemas/series'
+import type { SourceAdapter } from './SourceAdapter'
 import type { z } from 'zod'
 
 type NdjsonSource = z.infer<typeof NdjsonSourceSchema>

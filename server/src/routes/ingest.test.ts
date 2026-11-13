@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { createIngestHandler, type IngestDeps } from './ingest.js'
-import { MetricsCollector, MAX_PUSHED_METRICS } from '../metrics/collector.js'
+import { createIngestHandler, type IngestDeps } from './ingest'
+import { MetricsCollector, MAX_PUSHED_METRICS } from '../metrics/collector'
 
 const fakeRes = () => {
   const res = {

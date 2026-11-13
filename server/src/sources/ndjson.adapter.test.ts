@@ -1,6 +1,6 @@
 import path from 'node:path'
 import { describe, it, expect } from 'vitest'
-import { NdjsonAdapter } from './ndjson.adapter.js'
+import { NdjsonAdapter } from './ndjson.adapter'
 
 const adapter = new NdjsonAdapter({
   adapter: 'ndjson',

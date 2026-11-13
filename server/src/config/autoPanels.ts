@@ -1,5 +1,5 @@
-import { metricsCollector, type MetricsCollector } from '../metrics/collector.js'
-import type { Panel, Source } from '../schemas/config.js'
+import { metricsCollector, type MetricsCollector } from '../metrics/collector'
+import type { Panel, Source } from '../schemas/config'
 
 export const PUSHED_SOURCE_ID = 'pushed'
 export const CONNECTED_APPS_SECTION = 'Connected apps'

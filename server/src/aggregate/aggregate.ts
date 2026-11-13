@@ -9,8 +9,8 @@ import {
   startOfYear
 } from 'date-fns'
 import { utc } from '@date-fns/utc'
-import type { Granularity, Reduce } from '../schemas/config.js'
-import type { NamedSeries } from '../schemas/series.js'
+import type { Granularity, Reduce } from '../schemas/config'
+import type { NamedSeries } from '../schemas/series'
 
 const DATE_FNS_TOKENS: Record<string, string> = { YYYY: 'yyyy', MM: 'MM', DD: 'dd' }
 

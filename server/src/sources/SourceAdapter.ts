@@ -1,9 +1,9 @@
-import type { Source } from '../schemas/config.js'
-import type { SeriesQueryInput, SeriesResponse } from '../schemas/series.js'
-import { NdjsonAdapter } from './ndjson.adapter.js'
-import { RestAdapter } from './rest.adapter.js'
-import { InternalAdapter } from './internal.adapter.js'
-import type { MetricsCollector } from '../metrics/collector.js'
+import type { Source } from '../schemas/config'
+import type { SeriesQueryInput, SeriesResponse } from '../schemas/series'
+import { NdjsonAdapter } from './ndjson.adapter'
+import { RestAdapter } from './rest.adapter'
+import { InternalAdapter } from './internal.adapter'
+import type { MetricsCollector } from '../metrics/collector'
 
 export type Fetcher = (url: string, headers: Record<string, string>) => Promise<unknown>
 

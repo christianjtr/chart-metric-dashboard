@@ -1,12 +1,12 @@
 import path from 'node:path'
 import { initTRPC, TRPCError } from '@trpc/server'
-import { loadConfig } from '../config/loadConfig.js'
-import { autoPanelsFor, CONNECTED_APPS_SECTION, PUSHED_SOURCE, PUSHED_SOURCE_ID } from '../config/autoPanels.js'
-import { resolveRootFile } from '../config/paths.js'
-import { DashboardSettingsSchema, loadSettings, saveSettings } from '../config/settings.js'
-import { SeriesQuerySchema, SeriesResponseSchema } from '../schemas/series.js'
-import { createAdapter } from '../sources/SourceAdapter.js'
-import { metricsCollector } from '../metrics/collector.js'
+import { loadConfig } from '../config/loadConfig'
+import { autoPanelsFor, CONNECTED_APPS_SECTION, PUSHED_SOURCE, PUSHED_SOURCE_ID } from '../config/autoPanels'
+import { resolveRootFile } from '../config/paths'
+import { DashboardSettingsSchema, loadSettings, saveSettings } from '../config/settings'
+import { SeriesQuerySchema, SeriesResponseSchema } from '../schemas/series'
+import { createAdapter } from '../sources/SourceAdapter'
+import { metricsCollector } from '../metrics/collector'
 
 const t = initTRPC.create()
 

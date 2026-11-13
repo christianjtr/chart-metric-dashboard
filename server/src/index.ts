@@ -1,9 +1,9 @@
 import express from 'express'
 import cors from 'cors'
 import * as trpcExpress from '@trpc/server/adapters/express'
-import { appRouter } from './trpc/router.js'
-import { ingestRouter } from './routes/ingest.js'
-import { agentRouter } from './routes/agent.js'
+import { appRouter } from './trpc/router'
+import { ingestRouter } from './routes/ingest'
+import { agentRouter } from './routes/agent'
 
 const app = express()
 

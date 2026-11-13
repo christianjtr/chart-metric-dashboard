@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { aggregate, bucketStart, parseDate, type EventRow } from './aggregate.js'
+import { aggregate, bucketStart, parseDate, type EventRow } from './aggregate'
 
 describe('parseDate', () => {
   it('parses ISO strings natively when no format is given', () => {

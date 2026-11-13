@@ -1,7 +1,7 @@
 import fs from 'node:fs'
 import path from 'node:path'
-import { DashboardConfigSchema, type DashboardConfig } from '../schemas/config.js'
-import { resolveEnvRefs } from './env.js'
+import { DashboardConfigSchema, type DashboardConfig } from '../schemas/config'
+import { resolveEnvRefs } from './env'
 
 export const loadConfig = (configPath: string): DashboardConfig => {
   const absolutePath = path.resolve(configPath)

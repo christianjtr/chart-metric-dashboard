@@ -1,5 +1,5 @@
 import { describe, it, expect, afterEach } from 'vitest'
-import { resolveEnvRefs } from './env.js'
+import { resolveEnvRefs } from './env'
 
 const ORIGINAL_ENV = process.env
 
