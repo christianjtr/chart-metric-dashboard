@@ -36,11 +36,6 @@ const overall = computed(() => {
   return { level, text: STATUS_TEXT[level], color: STATUS_COLOR[level] }
 })
 
-const failedPanels = (indices: number[]) =>
-  indices
-    .map((index) => ({ title: panelAt(index).title, error: stateAt(index)?.error }))
-    .filter((item): item is { title: string; error: string } => item.error !== undefined)
-
 const toastVisible = ref(false)
 const toastText = computed(() => store.toast)
 watch(
@@ -110,6 +105,40 @@ onBeforeUnmount(() => store.stopPolling())
         <v-btn :value="30" size="small">30s</v-btn>
         <v-btn :value="60" size="small">60s</v-btn>
       </v-btn-toggle>
+      <v-menu v-if="store.failedCount > 0" location="bottom" :close-on-content-click="false">
+        <template #activator="{ props: menuProps }">
+          <v-badge
+            :content="store.failedCount"
+            :model-value="true"
+            color="error"
+            bordered
+            class="mr-3"
+          >
+            <v-btn v-bind="menuProps" variant="text" aria-label="Metric errors">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path d="M12 4 2.5 20.5h19L12 4Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round" />
+                <rect x="11" y="10.2" width="2" height="5" rx="1" fill="currentColor" />
+                <circle cx="12" cy="17.6" r="1.3" fill="currentColor" />
+              </svg>
+            </v-btn>
+          </v-badge>
+        </template>
+        <v-card max-width="420">
+          <v-card-title class="errors-popover-title">
+            {{ store.failedCount }} of {{ store.panels.length }} metrics failed to load
+          </v-card-title>
+          <v-card-text class="pt-0">
+            <div v-for="group in store.errorGroups" :key="group.message" class="errors-group mb-3">
+              <div class="errors-group-message">{{ group.message }}</div>
+              <div class="errors-group-panels">
+                <v-chip v-for="panel in group.panels" :key="panel" size="x-small" variant="tonal">
+                  {{ panel }}
+                </v-chip>
+              </div>
+            </div>
+          </v-card-text>
+        </v-card>
+      </v-menu>
       <v-btn variant="text" aria-label="About Vitalscope" @click="aboutDialog = true">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
           <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2" />
@@ -164,24 +193,6 @@ onBeforeUnmount(() => store.stopPolling())
             :description="section.description"
             class="mt-4"
           >
-            <v-alert
-              v-if="failedPanels(section.indices).length"
-              type="error"
-              variant="tonal"
-              density="compact"
-              class="section-errors mb-4"
-            >
-              <div class="font-weight-medium">
-                {{ failedPanels(section.indices).length }} of {{ section.indices.length }} metrics
-                failed to load
-              </div>
-              <ul class="section-errors-list">
-                <li v-for="item in failedPanels(section.indices)" :key="item.title">
-                  <strong>{{ item.title }}</strong> — {{ item.error }}
-                </li>
-              </ul>
-            </v-alert>
-
             <v-row class="panel-grid">
               <v-col
                 v-for="index in section.indices"
@@ -323,6 +334,23 @@ onBeforeUnmount(() => store.stopPolling())
 
 .panel-grid {
   row-gap: 16px;
+}
+
+.errors-popover-title {
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.errors-group-message {
+  font-size: 0.8125rem;
+  color: rgb(var(--v-theme-error));
+}
+
+.errors-group-panels {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 4px;
 }
 
 .section-errors-list {

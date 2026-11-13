@@ -7,6 +7,7 @@ import { CanvasRenderer } from 'echarts/renderers'
 import type { EChartsOption } from 'echarts'
 import type { Panel } from '@server/schemas/config'
 import type { NamedSeries } from '@server/schemas/series'
+import PanelError from './PanelError.vue'
 import PanelDescription from './PanelDescription.vue'
 
 echarts.use([BarChart, LineChart, GridComponent, LegendComponent, TooltipComponent, CanvasRenderer])
@@ -99,10 +100,11 @@ onBeforeUnmount(() => {
       <span class="panel-card-title">{{ props.panel.title }}</span>
       <v-chip v-if="props.sample" size="x-small" color="info" variant="tonal" class="ml-2">Sample</v-chip>
       <v-spacer />
+      <PanelError :error="props.error" />
       <PanelDescription :description="props.panel.description" />
     </v-card-title>
     <div v-if="props.error" class="panel-unavailable mx-4">
-      <span>Unavailable</span>
+      <span>—</span>
     </div>
     <v-card-text v-else>
       <div ref="chartEl" style="height: 180px" />

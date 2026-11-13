@@ -25,3 +25,4 @@ opencode.json
 .agents/**
 skills-lock.json
 dashboard.settings.json
+.chart-metric-dashboard/

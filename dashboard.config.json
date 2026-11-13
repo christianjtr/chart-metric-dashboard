@@ -6,7 +6,7 @@
     },
     {
       "name": "Health",
-      "description": "Frontend web vitals measured by Google PageSpeed Insights, plus gateway self-metrics (latency, traffic, error rate, CPU, RAM, uptime)."
+      "description": "Frontend web vitals measured by Google PageSpeed Insights (lab and real-user field data), plus gateway self-metrics (latency, traffic, error rate, CPU, RAM, uptime)."
     }
   ],
   "sources": [
@@ -52,6 +52,25 @@
         "date": "now",
         "value": "lighthouseResult.audits.[].numericValue",
         "series": "lighthouseResult.audits.[].id"
+      }
+    },
+    {
+      "id": "psi-field",
+      "adapter": "rest",
+      "label": "PageSpeed field data (CrUX)",
+      "url": "https://www.googleapis.com/pagespeedonline/v5/runPagespeed",
+      "refresh": 900,
+      "cacheTtl": 900,
+      "params": {
+        "url": "setting:psiTargetUrl",
+        "strategy": "mobile",
+        "category": "performance",
+        "key": "setting:PAGESPEED_API_KEY"
+      },
+      "mapping": {
+        "date": "now",
+        "value": "loadingExperience.metrics.[].percentile",
+        "series": "loadingExperience.metrics.[].metric"
       }
     },
     {
@@ -278,16 +297,150 @@
       "lowerIsBetter": false
     },
     {
-      "title": "PSI audits",
-      "description": "Dense table of every Lighthouse audit numeric value from the latest PSI run for the configured target URL (mobile), one row per audit id.",
+      "title": "Web Vitals (PSI lab)",
+      "description": "Key load and interactivity audits from the latest PageSpeed Insights run (mobile), each with its detected value, the recommended value and the cited source.",
       "source": "psi-vitals",
       "metric": "audits",
       "chart": "table",
       "granularity": "hour",
       "reduce": "last",
       "refresh": 900,
-      "span": 12,
-      "section": "Health"
+      "span": 6,
+      "section": "Health",
+      "references": [
+        {
+          "id": "first-contentful-paint",
+          "label": "First Contentful Paint",
+          "unit": "ms",
+          "healthy": "≤ 1.8 s",
+          "good": 1800,
+          "poor": 3000,
+          "source": "web.dev",
+          "url": "https://web.dev/articles/fcp"
+        },
+        {
+          "id": "largest-contentful-paint",
+          "label": "Largest Contentful Paint",
+          "unit": "ms",
+          "healthy": "≤ 2.5 s",
+          "good": 2500,
+          "poor": 4000,
+          "source": "web.dev",
+          "url": "https://web.dev/articles/lcp"
+        },
+        {
+          "id": "total-blocking-time",
+          "label": "Total Blocking Time",
+          "unit": "ms",
+          "healthy": "≤ 200 ms",
+          "good": 200,
+          "poor": 600,
+          "source": "Lighthouse",
+          "url": "https://developer.chrome.com/docs/lighthouse/performance/total-blocking-time/"
+        },
+        {
+          "id": "cumulative-layout-shift",
+          "label": "Cumulative Layout Shift",
+          "healthy": "≤ 0.10",
+          "good": 0.1,
+          "poor": 0.25,
+          "source": "web.dev",
+          "url": "https://web.dev/articles/cls"
+        },
+        {
+          "id": "speed-index",
+          "label": "Speed Index",
+          "unit": "ms",
+          "healthy": "≤ 3.4 s",
+          "good": 3400,
+          "poor": 5800,
+          "source": "Lighthouse",
+          "url": "https://developer.chrome.com/docs/lighthouse/performance/speed-index/"
+        },
+        {
+          "id": "interactive",
+          "label": "Time to Interactive",
+          "unit": "ms",
+          "healthy": "≤ 3.8 s",
+          "good": 3800,
+          "poor": 7300,
+          "source": "web.dev",
+          "url": "https://web.dev/articles/tti"
+        },
+        {
+          "id": "server-response-time",
+          "label": "Server Response Time (TTFB)",
+          "unit": "ms",
+          "healthy": "≤ 0.8 s",
+          "good": 800,
+          "poor": 1800,
+          "source": "web.dev",
+          "url": "https://web.dev/articles/ttfb"
+        }
+      ]
+    },
+    {
+      "title": "Core Web Vitals (field data)",
+      "description": "75th percentile values measured on real users (Chrome UX Report) from the latest PageSpeed Insights run. Needs enough CrUX traffic for the target URL; otherwise the panel stays empty.",
+      "source": "psi-field",
+      "metric": "field",
+      "chart": "table",
+      "granularity": "hour",
+      "reduce": "last",
+      "refresh": 900,
+      "span": 6,
+      "section": "Health",
+      "references": [
+        {
+          "id": "INP",
+          "label": "Interaction to Next Paint",
+          "unit": "ms",
+          "healthy": "≤ 200 ms",
+          "good": 200,
+          "poor": 500,
+          "source": "web.dev",
+          "url": "https://web.dev/articles/inp"
+        },
+        {
+          "id": "LCP",
+          "label": "Largest Contentful Paint",
+          "unit": "ms",
+          "healthy": "≤ 2.5 s",
+          "good": 2500,
+          "poor": 4000,
+          "source": "web.dev",
+          "url": "https://web.dev/articles/lcp"
+        },
+        {
+          "id": "CLS",
+          "label": "Cumulative Layout Shift",
+          "healthy": "≤ 0.10",
+          "good": 0.1,
+          "poor": 0.25,
+          "source": "web.dev",
+          "url": "https://web.dev/articles/cls"
+        },
+        {
+          "id": "FCP",
+          "label": "First Contentful Paint",
+          "unit": "ms",
+          "healthy": "≤ 1.8 s",
+          "good": 1800,
+          "poor": 3000,
+          "source": "web.dev",
+          "url": "https://web.dev/articles/fcp"
+        },
+        {
+          "id": "TTFB",
+          "label": "Time to First Byte",
+          "unit": "ms",
+          "healthy": "≤ 0.8 s",
+          "good": 800,
+          "poor": 1800,
+          "source": "web.dev",
+          "url": "https://web.dev/articles/ttfb"
+        }
+      ]
     }
   ]
 }

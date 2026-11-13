@@ -9,6 +9,7 @@ import type { NamedSeries } from '@server/schemas/series'
 import { formatValue } from '../utils/format'
 import { colorFor } from '../utils/thresholds'
 import { deltaInfo } from '../utils/delta'
+import PanelError from './PanelError.vue'
 import PanelDescription from './PanelDescription.vue'
 import PanelReference from './PanelReference.vue'
 import DeltaChip from './DeltaChip.vue'
@@ -106,10 +107,11 @@ onBeforeUnmount(() => {
       <span class="panel-card-title">{{ props.panel.title }}</span>
       <v-chip v-if="props.sample" size="x-small" color="info" variant="tonal" class="ml-2">Sample</v-chip>
       <v-spacer />
+      <PanelError :error="props.error" />
       <PanelDescription :description="props.panel.description" />
     </v-card-title>
     <div v-if="props.error" class="panel-unavailable mx-4">
-      <span>Unavailable</span>
+      <span>—</span>
     </div>
     <v-card-text v-else class="panel-card-text">
       <span class="sparkstat-value" :style="{ color }">{{ display }}</span>

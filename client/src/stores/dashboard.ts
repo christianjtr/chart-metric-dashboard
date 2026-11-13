@@ -61,6 +61,24 @@ export const useDashboardStore = defineStore('dashboard', () => {
   const hasSampleData = computed(() => Object.values(panelState.value).some((s) => s.sample))
   const showSampleBanner = computed(() => hasSampleData.value && !sampleBannerDismissed.value)
 
+  const failedPanels = computed(() =>
+    panels.value
+      .map((panel, index) => ({ title: panel.title, message: panelState.value[index]?.error }))
+      .filter((item): item is { title: string; message: string } => item.message !== undefined)
+  )
+
+  const failedCount = computed(() => failedPanels.value.length)
+
+  const errorGroups = computed(() => {
+    const groups: Array<{ message: string; panels: string[] }> = []
+    for (const { title, message } of failedPanels.value) {
+      const group = groups.find((g) => g.message === message)
+      if (group) group.panels.push(title)
+      else groups.push({ message, panels: [title] })
+    }
+    return groups
+  })
+
   const statusOverall = computed<StatusLevel>(() => {
     const strips = panels.value
       .map((panel, index) => ({ panel, state: panelState.value[index] }))
@@ -212,6 +230,8 @@ export const useDashboardStore = defineStore('dashboard', () => {
     showSampleBanner,
     dismissSampleBanner,
     statusOverall,
+    failedCount,
+    errorGroups,
     loadConfig,
     fetchPanel,
     refetchAll,

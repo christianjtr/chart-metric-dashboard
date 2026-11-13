@@ -115,3 +115,11 @@ _Avoid_: mock mode, demo mode
 **Healthy Reference**:
 The official healthy value or range for a Panel's metric (e.g. LCP ≤ 2.5 s), displayed under the current value and cited with its source link (web.dev, Lighthouse, SRE Workbook). Declared in Config via the `reference` field.
 _Avoid_: target, SLO, benchmark
+
+**Field Data (CrUX)**:
+Real-user performance metrics (75th percentiles from the Chrome UX Report: LCP, INP, CLS, FCP, TTFB) exposed by PageSpeed Insights through `loadingExperience`, as opposed to the lab metrics Lighthouse synthesizes on every run. Rendered by a curated Table Panel with one row per metric; empty when the target URL lacks CrUX coverage.
+_Avoid_: RUM data, user metrics
+
+**Web Vitals Table**:
+A curated Table Panel that shows each metric row with its detected value (colored good/warn/poor), the recommended value and the cited source, driven by per-row Config references instead of listing every raw audit id.
+_Avoid_: audit table, raw table
