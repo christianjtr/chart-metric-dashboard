@@ -17,12 +17,12 @@ export function initVitalscope(options = {}) {
     const metrics = [
       { name: 'rss_mb', value: Math.round(process.memoryUsage.rss() / 1024 / 1024) },
       { name: 'heap_used_mb', value: Math.round(process.memoryUsage().heapUsed / 1024 / 1024) },
-      { name: 'event_loop_lag_ms', value: Math.round(histogram.mean / 1e6 * 100) / 100 }
+      { name: 'event_loop_lag_ms', value: Number.isFinite(histogram.mean) ? Math.round(histogram.mean / 1e6 * 100) / 100 : 0 }
     ]
     for (const [name, value] of custom) metrics.push({ name, value })
     if (!token) return
     try {
-      await fetch(url + '/ingest?token=' + encodeURIComponent(token), {
+      return await fetch(url + '/ingest?token=' + encodeURIComponent(token), {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({ app, metrics })
