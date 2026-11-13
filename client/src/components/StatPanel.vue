@@ -5,7 +5,9 @@ import type { NamedSeries } from '@server/schemas/series'
 import { formatValue } from '../utils/format'
 import { colorFor } from '../utils/thresholds'
 import { deltaInfo } from '../utils/delta'
+import PanelError from './PanelError.vue'
 import PanelDescription from './PanelDescription.vue'
+import PanelReference from './PanelReference.vue'
 import DeltaChip from './DeltaChip.vue'
 
 const props = defineProps<{
@@ -44,16 +46,20 @@ const delta = computed(() => {
     <v-progress-linear :active="props.loading" color="primary" indeterminate />
     <v-card-title class="panel-card-header">
       <span class="panel-card-title">{{ props.panel.title }}</span>
+      <v-chip v-if="props.panel.auto" size="x-small" variant="tonal" class="ml-2">Auto</v-chip>
       <v-chip v-if="props.sample" size="x-small" color="info" variant="tonal" class="ml-2">Sample</v-chip>
       <v-spacer />
+      <PanelError :error="props.error" />
       <PanelDescription :description="props.panel.description" />
     </v-card-title>
     <div v-if="props.error" class="panel-unavailable mx-4">
-      <span>{{ props.error }}</span>
+      <span>—</span>
     </div>
     <v-card-text v-else class="panel-card-text">
       <span class="stat-value" :style="{ color }">{{ display }}</span>
       <DeltaChip v-if="delta" :delta="delta" class="mt-2" />
+      <PanelReference :reference="props.panel.reference" />
+      <div class="stat-spark-reserve" aria-hidden="true" />
     </v-card-text>
   </v-card>
 </template>
@@ -64,5 +70,11 @@ const delta = computed(() => {
   font-weight: 600;
   font-variant-numeric: tabular-nums;
   line-height: 1.1;
+}
+
+.stat-spark-reserve {
+  width: 100%;
+  height: 56px;
+  margin-bottom: -10px;
 }
 </style>

@@ -1,6 +1,7 @@
 import path from 'node:path'
 import { initTRPC, TRPCError } from '@trpc/server'
 import { loadConfig } from '../config/loadConfig'
+import { autoPanelsFor, CONNECTED_APPS_SECTION, PUSHED_SOURCE, PUSHED_SOURCE_ID } from '../config/autoPanels'
 import { resolveRootFile } from '../config/paths'
 import { DashboardSettingsSchema, loadSettings, saveSettings } from '../config/settings'
 import { SeriesQuerySchema, SeriesResponseSchema } from '../schemas/series'
@@ -27,7 +28,10 @@ const publicProcedure = t.procedure.use(timed)
 
 const getSource = (sourceId: string) => {
   const config = loadConfig(CONFIG_PATH)
-  const source = config.sources.find((s) => s.id === sourceId)
+  const source =
+    sourceId === PUSHED_SOURCE_ID
+      ? PUSHED_SOURCE
+      : config.sources.find((s) => s.id === sourceId)
   if (!source) {
     throw new TRPCError({ code: 'NOT_FOUND', message: `Unknown source: ${sourceId}` })
   }
@@ -39,7 +43,16 @@ export const appRouter = t.router({
   dashboard: t.router({
     config: publicProcedure.query(() => {
       const config = loadConfig(CONFIG_PATH)
-      return { sections: config.sections ?? [], panels: config.panels }
+      const auto = autoPanelsFor(config.panels)
+      const sections = [...(config.sections ?? [])]
+      if (auto.length > 0 && !sections.some((s) => s.name === CONNECTED_APPS_SECTION)) {
+        sections.push({
+          name: CONNECTED_APPS_SECTION,
+          description:
+            'Panels auto-created from metrics reported by connected apps through the ingest endpoint. Declare a panel in dashboard.config.json to customize or pin it.'
+        })
+      }
+      return { sections, panels: [...config.panels, ...auto] }
     }),
     settings: publicProcedure.query(() => loadSettings()),
     setSettings: publicProcedure.input(DashboardSettingsSchema).mutation(({ input }) => saveSettings(input))

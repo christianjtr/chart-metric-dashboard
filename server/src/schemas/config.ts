@@ -56,10 +56,33 @@ const ThresholdSchema = z.object({
   value: z.number()
 })
 
+export const ReferenceSchema = z.object({
+  healthy: z.string().min(1),
+  source: z.string().min(1),
+  url: z.string().url().optional()
+})
+
+export type PanelReference = z.infer<typeof ReferenceSchema>
+
+export const TableReferenceSchema = z.object({
+  id: z.string().min(1),
+  label: z.string().min(1),
+  unit: z.string().optional(),
+  healthy: z.string().min(1),
+  good: z.number(),
+  poor: z.number(),
+  source: z.string().min(1),
+  url: z.string().url().optional()
+})
+
+export type TableReference = z.infer<typeof TableReferenceSchema>
+
 export const PanelSchema = z.object({
   title: z.string().min(1),
   description: z.string().max(400).optional(),
   lowerIsBetter: z.boolean().optional(),
+  reference: ReferenceSchema.optional(),
+  references: z.array(TableReferenceSchema).max(12).optional(),
   source: z.string().min(1),
   metric: z.string().min(1).default('count'),
   chart: ChartTypeSchema,
@@ -73,6 +96,7 @@ export const PanelSchema = z.object({
   thresholds: z.array(ThresholdSchema).max(4).optional(),
   span: z.number().int().min(1).max(12).default(6),
   section: z.string().optional(),
+  auto: z.boolean().optional(),
   reduce: ReduceSchema.default('sum')
 })
 

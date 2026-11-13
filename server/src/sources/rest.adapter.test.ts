@@ -160,6 +160,30 @@ describe('RestAdapter', () => {
       expect(psiFetcher).not.toHaveBeenCalled()
     })
 
+    it('serves synthetic field metrics (INP, LCP, CLS, FCP, TTFB) for CrUX panels without an API key', async () => {
+      const psiFetcher = vi.fn(async () => ({}))
+      const psi = new RestAdapter(
+        {
+          ...source,
+          id: 'psi-field',
+          url: 'https://www.googleapis.com/pagespeedonline/v5/runPagespeed',
+          params: { key: 'setting:PAGESPEED_API_KEY' },
+          mapping: { date: 'now', value: 'x' }
+        },
+        psiFetcher
+      )
+      const result = await psi.getSeries({
+        source: 'psi-field',
+        metric: 'field',
+        granularity: 'hour',
+        reduce: 'last'
+      })
+      expect(result.sample).toBe(true)
+      expect(result.series.map((s) => s.name).sort()).toEqual(['CLS', 'FCP', 'INP', 'LCP', 'TTFB'])
+      expect(result.series[0].points.length).toBeGreaterThan(0)
+      expect(psiFetcher).not.toHaveBeenCalled()
+    })
+
     it('serves a healthy synthetic uptime probe for statusbar panels without an API key', async () => {
       const psiFetcher = vi.fn(async () => ({}))
       const psi = new RestAdapter(

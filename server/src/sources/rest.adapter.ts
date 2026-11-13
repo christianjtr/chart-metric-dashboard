@@ -159,12 +159,26 @@ export class RestAdapter implements SourceAdapter {
       'total-blocking-time': [90, 280],
       'cumulative-layout-shift': [0.01, 0.09],
       'speed-index': [1300, 2800],
-      interactive: [1900, 3600]
+      interactive: [1900, 3600],
+      'server-response-time': [180, 420]
+    }
+
+    const fieldRanges: Record<string, [number, number]> = {
+      FCP: [900, 1500],
+      INP: [120, 260],
+      LCP: [1400, 2300],
+      CLS: [0.01, 0.08],
+      TTFB: [250, 550]
     }
 
     let series
     if (metric === 'audits') {
       series = Object.entries(auditRanges).map(([name, [min, max]]) => ({
+        name,
+        points: pointsFor(min, max)
+      }))
+    } else if (metric === 'field') {
+      series = Object.entries(fieldRanges).map(([name, [min, max]]) => ({
         name,
         points: pointsFor(min, max)
       }))

@@ -31,6 +31,15 @@
   justify-content: center;
 }
 
+.panel-unavailable {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 140px;
+  font-size: 1.2rem;
+  color: rgba(var(--v-theme-on-surface), 0.35);
+}
+
 .section-panel {
   background: rgba(var(--v-theme-surface), 0.55);
   border-radius: 8px;

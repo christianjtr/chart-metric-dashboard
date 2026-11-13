@@ -32,6 +32,7 @@ export const useDashboardStore = defineStore('dashboard', () => {
   const globalRefresh = ref<number | undefined>(undefined)
   const psiTargetUrl = ref<string | undefined>(undefined)
   const psiApiKey = ref<string | undefined>(undefined)
+  const ingestToken = ref<string | undefined>(undefined)
   const toast = ref<string>()
   const sampleBannerDismissed = ref(localStorage.getItem('vitalscope.sampleBannerDismissed') === '1')
   const timers = new Map<number, ReturnType<typeof setInterval>>()
@@ -60,6 +61,24 @@ export const useDashboardStore = defineStore('dashboard', () => {
 
   const hasSampleData = computed(() => Object.values(panelState.value).some((s) => s.sample))
   const showSampleBanner = computed(() => hasSampleData.value && !sampleBannerDismissed.value)
+
+  const failedPanels = computed(() =>
+    panels.value
+      .map((panel, index) => ({ title: panel.title, message: panelState.value[index]?.error }))
+      .filter((item): item is { title: string; message: string } => item.message !== undefined)
+  )
+
+  const failedCount = computed(() => failedPanels.value.length)
+
+  const errorGroups = computed(() => {
+    const groups: Array<{ message: string; panels: string[] }> = []
+    for (const { title, message } of failedPanels.value) {
+      const group = groups.find((g) => g.message === message)
+      if (group) group.panels.push(title)
+      else groups.push({ message, panels: [title] })
+    }
+    return groups
+  })
 
   const statusOverall = computed<StatusLevel>(() => {
     const strips = panels.value
@@ -182,9 +201,11 @@ export const useDashboardStore = defineStore('dashboard', () => {
       const settings = await trpc.dashboard.settings.query()
       psiTargetUrl.value = settings.psiTargetUrl
       psiApiKey.value = settings.PAGESPEED_API_KEY
+      ingestToken.value = settings.ingestToken
     } catch {
       psiTargetUrl.value = undefined
       psiApiKey.value = undefined
+      ingestToken.value = undefined
     }
   }
 
@@ -193,8 +214,17 @@ export const useDashboardStore = defineStore('dashboard', () => {
     const key = apiKey?.trim() || undefined
     psiTargetUrl.value = value
     psiApiKey.value = key
-    await trpc.dashboard.setSettings.mutate({ psiTargetUrl: value, PAGESPEED_API_KEY: key })
+    await trpc.dashboard.setSettings.mutate({ psiTargetUrl: value, PAGESPEED_API_KEY: key, ingestToken: ingestToken.value })
     await refetchAll()
+  }
+
+  async function saveIngestToken(token?: string) {
+    ingestToken.value = token
+    await trpc.dashboard.setSettings.mutate({
+      psiTargetUrl: psiTargetUrl.value,
+      PAGESPEED_API_KEY: psiApiKey.value,
+      ingestToken: token
+    })
   }
 
   return {
@@ -212,6 +242,8 @@ export const useDashboardStore = defineStore('dashboard', () => {
     showSampleBanner,
     dismissSampleBanner,
     statusOverall,
+    failedCount,
+    errorGroups,
     loadConfig,
     fetchPanel,
     refetchAll,
@@ -220,6 +252,8 @@ export const useDashboardStore = defineStore('dashboard', () => {
     setTimeRange,
     stopPolling,
     loadSettings,
-    savePsiTargetUrl
+    savePsiTargetUrl,
+    saveIngestToken,
+    ingestToken
   }
 })
