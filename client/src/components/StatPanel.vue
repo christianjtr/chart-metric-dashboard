@@ -59,6 +59,7 @@ const delta = computed(() => {
       <span class="stat-value" :style="{ color }">{{ display }}</span>
       <DeltaChip v-if="delta" :delta="delta" class="mt-2" />
       <PanelReference :reference="props.panel.reference" />
+      <div class="stat-spark-reserve" aria-hidden="true" />
     </v-card-text>
   </v-card>
 </template>
@@ -69,5 +70,11 @@ const delta = computed(() => {
   font-weight: 600;
   font-variant-numeric: tabular-nums;
   line-height: 1.1;
+}
+
+.stat-spark-reserve {
+  width: 100%;
+  height: 56px;
+  margin-bottom: -10px;
 }
 </style>
