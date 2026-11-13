@@ -12,10 +12,11 @@ Vitalscope is a self-hosted status page and health dashboard for a web platform:
 4. [Step 3 — Connect your apps](#step-3--connect-your-apps)
 5. [Integration example: shop-api](#integration-example-shop-api)
 6. [Customize panels](#customize-panels)
-7. [Motivation](#motivation)
-8. [Architecture](#architecture)
-9. [Technologies](#technologies)
-10. [Original project (charting exercise)](#original-project-charting-exercise)
+7. [Configuration, environment variables & tokens](#configuration-environment-variables--tokens)
+8. [Motivation](#motivation)
+9. [Architecture](#architecture)
+10. [Technologies](#technologies)
+11. [Original project (charting exercise)](#original-project-charting-exercise)
 
 ## Use case: monitor an e-commerce
 
@@ -51,14 +52,14 @@ npm run test --workspace server    # vitest (62 tests)
 ## Step 2 — Connect your website
 
 1. Open the dashboard, click the **gear icon → PageSpeed** tab.
-2. Enter the public URL of your site (e.g. `https://shop.example.com`), or set `PAGESPEED_API_KEY` in the environment for real user data.
-3. Save. The PSI panels refresh with your site's lab metrics; if the site has enough Chrome UX Report traffic, the **Core Web Vitals (field data)** table fills in too.
+2. Enter the public URL of your site (e.g. `https://shop.example.com`) **and** a PageSpeed Insights API key. You can enter the key in Settings or provide `PAGESPEED_API_KEY` in the gateway's environment.
+3. Save. With both configured, the PSI panels request your site's lab metrics; if the site has enough Chrome UX Report traffic, the **Core Web Vitals (field data)** table fills in too. Without a key, the panels continue showing **Sample Data**, even when a URL is saved. See [configuration and tokens](#configuration-environment-variables--tokens) for precedence and failure behavior.
 
 ## Step 3 — Connect your apps
 
 Any frontend or backend can become a **Connected App** by reporting metrics to `POST /ingest`:
 
-1. Click the **gear icon → Ingest** tab and **generate an Ingest Token** (the endpoint answers `503` until a token exists; wrong tokens get `403`).
+1. Click the **gear icon → Ingest** tab, **generate an Ingest Token**, copy it and **Save** (the endpoint answers `503` until a token is saved; wrong tokens get `403`).
 2. Report metrics over HTTP from anywhere:
 
 ```shell
@@ -97,7 +98,7 @@ VITALSCOPE_TOKEN=<INGEST_TOKEN> node examples/shop-api.mjs
 
 What it does:
 
-1. Loads the same agent a production backend would use (`agent/node/vitalscope-node.js`), configured via `VITALSCOPE_URL`, `VITALSCOPE_TOKEN` and `VITALSCOPE_APP` (all optional, with sensible defaults).
+1. Loads the same agent a production backend would use (`agent/node/vitalscope-node.js`), configured via `VITALSCOPE_URL`, `VITALSCOPE_TOKEN` and `VITALSCOPE_APP`. The URL and app name default to `http://localhost:3000` and `shop-api`; **the token is required** — the example exits with an error if it is missing.
 2. Simulates checkout latency (drifting 40–800 ms), queue depth (drifting integers) and cache hit ratio (60–100 %) with realistic noise, and reports them as `shop-api.checkout_latency_ms`, `shop-api.queue_depth`, `shop-api.cache_hit_pct`.
 3. Pushes the agent's own process metrics too (`rss_mb`, `heap_used_mb`, `event_loop_lag_ms`) — six panels total appear under **Connected apps** within seconds:
 
@@ -137,6 +138,78 @@ Panels, sources and thresholds live in `dashboard.config.json`, shared by both l
 ```
 
 A declared panel on the same metric shadows its Auto Panel; auto panels are never written to config.
+
+## Configuration, environment variables & tokens
+
+**Design decision:** commit the dashboard's structure (Sources, Panels and thresholds), with references to secrets rather than their values — see [ADR 0002](docs/adr/0002-config-driven-dashboard.md).
+Keep runtime settings and the shared ingest credential outside Git in `dashboard.settings.json`; the push-ingest design is documented in [ADR 0009](docs/adr/0009-push-ingest-connected-apps.md).
+
+### Environment variables
+
+The gateway and Node agent read their own process environment. Set gateway variables in the shell or deployment environment that starts the gateway; set `VITALSCOPE_*` in the app that reports metrics. The browser agent uses HTML attributes instead.
+
+| Name | Scope | Default | What it controls | If omitted |
+| --- | --- | --- | --- | --- |
+| `PORT` | Gateway | `3000` | HTTP port for tRPC, ingest and agent scripts. | Listens on port 3000. Changing it also requires updating client/proxy and agent URLs; the Vite dev proxy targets port 3000 explicitly. |
+| `DASHBOARD_CONFIG` | Gateway | Locate `dashboard.config.json` | Path to the shared Sources/Panels definition. | Searches from the working directory upward; if not found, attempts the filename in the working directory. A missing or invalid config causes config-dependent requests to fail. |
+| `DASHBOARD_SETTINGS` | Gateway | Locate `dashboard.settings.json` | Path used to read and save runtime settings. | Uses the same upward search, falling back to the working directory. A missing or invalid settings file loads as empty settings. |
+| `PAGESPEED_API_KEY` | Gateway / PSI adapter | Unset | API key for live PageSpeed requests, used when no saved key exists. | Uses the saved key; if neither is available, PSI returns Sample Data. |
+| `psiTargetUrl` | Gateway / PSI adapter | Unset | Case-sensitive environment fallback for the target URL when it is absent from Settings. | Uses the saved URL. With a key but no URL in either place, the PSI request fails due to an unresolved parameter. Without a key, PSI stays on Sample Data. |
+| `EXTERNAL_API_KEY` | Gateway / example REST source | Empty string | Entire `Authorization` header value for the `external-api` source in the committed config; include a scheme such as `Bearer ` if the real service requires it. | Resolves to an empty header. This placeholder source is not needed for PSI or ingest; configure its URL and credentials before using it. |
+| `VITALSCOPE_URL` | Node agent / shop-api example | `http://localhost:3000` | Gateway base URL for metric reports. | Reports to the local gateway. |
+| `VITALSCOPE_TOKEN` | Node agent / shop-api example | Empty string | Credential sent with each report; must match the gateway's saved `ingestToken`. | The Node agent skips sending; the shop-api example exits with an error. Setting it does not configure the gateway's token. |
+| `VITALSCOPE_APP` | Node agent / shop-api example | `node-app` / `shop-api` respectively | Namespace prefix for pushed metric names. | Uses the corresponding default app name. |
+
+Explicit Node agent options (`url`, `app`, `token`) take precedence over `VITALSCOPE_*`. REST query parameters using `setting:NAME` resolve the saved setting first, then the gateway environment; `env:NAME` reads only the environment. Source headers also support `env:NAME` references, resolving missing values to an empty string.
+
+Path overrides are resolved relative to the gateway's working directory unless absolute. Use an absolute `DASHBOARD_SETTINGS` path for a predictable deployment location, and ensure its parent directory exists and is writable. An alternate filename is **not automatically git-ignored**.
+
+The gateway's current startup script does **not** automatically load `.env` files. For example, after saving your site's URL in Settings, start from the repository root with:
+
+```shell
+PAGESPEED_API_KEY='<your-pagespeed-api-key>' npm run dev
+```
+
+For the reporting app, use the `VITALSCOPE_TOKEN=... node examples/shop-api.mjs` command above. These are separate credentials with separate purposes.
+
+### Tokens and API keys
+
+| Credential | Why it exists | How to configure it | Behavior and tradeoffs |
+| --- | --- | --- | --- |
+| `ingestToken` | Shared credential that gates writes to `POST /ingest`; prevents unauthenticated metric submissions to that endpoint when the gateway's Settings access is protected. | Settings → Ingest → Generate → copy → **Save**. The UI generates 24 random bytes as 48 hex characters. Settings accepts 16–128 characters and persists the token in the settings file. Configure reporters with the same value. | No saved token: `503`. Missing or incorrect submitted token: `403`. After successful authentication, a payload that fails schema validation: `400`. Valid payload: `202` with `accepted` and `rejected` counts. Accepts `Authorization: Bearer <token>` or `?token=<token>`; a Bearer header takes precedence. |
+| `PAGESPEED_API_KEY` | Authenticates the gateway's live requests to Google PageSpeed Insights; it is unrelated to ingest. | Obtain a PageSpeed Insights API key and enter it in Settings → PageSpeed, or set it in the gateway environment. A saved key takes precedence over the environment. | No effective key: synthetic results marked as Sample Data. A present but invalid key, quota failure or other upstream error surfaces as an error, rather than silently switching to samples. A key alone does not guarantee CrUX field-data availability. |
+
+The ingest handler checks token string lengths before comparing buffers with `crypto.timingSafeEqual`. Prefer the generated hexadecimal token: the current length guard counts characters rather than UTF-8 bytes, so this is not a blanket guarantee for arbitrary Unicode token inputs.
+
+The browser agent uses `?token=` because `sendBeacon` cannot attach a custom Authorization header; the Node agent currently uses query-string authentication too. Query strings can appear in access logs and monitoring tools. Prefer Bearer headers for custom HTTP integrations and redact query tokens in infrastructure logs. The browser's `data-token` is visible to visitors, so it cannot be treated as a server-only secret or as proof of an individual reporter's identity.
+
+### Browser agent attributes
+
+These attributes belong on the `<script>` element that loads `/agent/vitalscope.js`:
+
+| Attribute | Default | What it controls | If omitted |
+| --- | --- | --- | --- |
+| `data-url` | Empty string | Gateway base URL, without a trailing slash. | Sends to `/ingest` on the **page's origin**, not necessarily the origin serving the script. Set it explicitly when the gateway is elsewhere. |
+| `data-app` | `web` | Namespace for metrics, such as `web.lcp_ms`. | Uses `web`. |
+| `data-token` | Empty string | The gateway's saved ingest token. | Reports with an empty token; an enabled gateway rejects them with `403` (or `503` if ingest is disabled). |
+
+The agent sends at most once per page load, on `pagehide` or when the document becomes hidden, and only when it has metrics to report. It uses `sendBeacon` when available, otherwise a keepalive `fetch`.
+
+### Config files and Git
+
+| File | Git policy | Purpose and implications |
+| --- | --- | --- |
+| `dashboard.config.json` | Committed | Reproducible Sources, Panels, thresholds and mappings. Keep actual secrets out; use `env:NAME` / `setting:NAME` references. |
+| `dashboard.settings.json` | Ignored | Local target URL, optional PageSpeed API key and ingest token. Written by the Settings UI as plain JSON, not encrypted. Provision it separately per deployment. |
+| `.env.local`, `.env.*.local` | Ignored | Local environment files, if you choose to use them with an explicit loader. Being ignored does not make the gateway load them. |
+| `.env` or a custom settings filename | Not covered by these ignore rules | Do not assume these files are excluded from Git; add an appropriate ignore rule before storing secrets in them. |
+
+### Security notes for deployment
+
+- **Use a trusted network or an authenticated gateway/reverse proxy.** The dashboard has no built-in user authentication. Its Settings procedures can read stored keys/tokens and overwrite settings without authentication; the ingest token protects only the ingest endpoint.
+- **CORS is currently open** (`cors()` allows all origins). Restrict allowed browser origins for your deployment, but do not treat CORS as access control: non-browser HTTP clients are not constrained by it.
+- **Use HTTPS for remote reporting** and protect the settings file and request logs. A git-ignored secret can still be exposed through filesystem access, Settings responses, browser snippets or query-string logs.
+- **Rotate the ingest token after demos or sharing snippets:** generate and save a replacement, then update every reporter. Only one token is active; previous tokens stop working immediately. To disable ingest, clear the token and save. For PageSpeed, clearing a saved key still leaves an environment-provided key effective.
 
 ## Motivation
 
