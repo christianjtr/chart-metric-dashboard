@@ -114,7 +114,23 @@ onBeforeUnmount(() => store.stopPolling())
 
 <template>
   <v-app>
-    <v-app-bar flat border>
+    <v-app-bar flat border class="app-header">
+      <svg class="brand-mark mr-3" width="28" height="28" viewBox="0 0 28 28" fill="none" aria-hidden="true">
+        <defs>
+          <linearGradient id="vitalscopeBrand" x1="0" y1="0" x2="28" y2="28" gradientUnits="userSpaceOnUse">
+            <stop stop-color="#9489ff" />
+            <stop offset="1" stop-color="#6a5ce8" />
+          </linearGradient>
+        </defs>
+        <rect width="28" height="28" rx="7" fill="url(#vitalscopeBrand)" />
+        <path
+          d="M5.5 15.5h3.3l2.5-6.3 4.4 11 2.5-6.3h4.3"
+          stroke="#ffffff"
+          stroke-width="2.2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        />
+      </svg>
       <v-app-bar-title class="app-title">Vitalscope</v-app-bar-title>
       <v-btn-toggle
         :model-value="store.timeRange"
@@ -410,8 +426,20 @@ onBeforeUnmount(() => store.stopPolling())
 </template>
 
 <style scoped>
+.app-header {
+  background-image: linear-gradient(180deg, #2a2a42 0%, #1f1f30 100%);
+  border-bottom-color: rgba(122, 111, 240, 0.28) !important;
+}
+
+.brand-mark {
+  margin-left: 4px;
+  border-radius: 7px;
+  box-shadow: 0 0 14px rgba(122, 111, 240, 0.45);
+}
+
 .app-title {
-  font-weight: 600;
+  font-weight: 700;
+  letter-spacing: 0.02em;
 }
 
 .empty-state {
