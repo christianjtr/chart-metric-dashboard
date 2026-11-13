@@ -1,321 +1,259 @@
 # Vitalscope — Web Vitals & Gateway Health Dashboard
 
-Vitalscope is a self-hosted status page and health dashboard for a web platform: it shows live availability, frontend Web Vitals measured by [Google PageSpeed Insights](https://developers.google.com/speed/pagespeed/insights/), gateway self-metrics, and metrics pushed by any Connected App through a plug-and-play ingest endpoint.
+> 🚧 **Status: Active Development & Testing**  
+> This project is currently under active development as an evolution of a charting exercise. Features, configurations, and APIs may change while we test and refine the platform.
+
+Vitalscope is a simple, self-hosted status page and health dashboard for your web projects. Instead of checking four different tools, it gives you one clean screen showing if your website is online, how fast it feels for real visitors, and whether your backend APIs are healthy.
 
 ![Vitalscope dashboard](docs/screenshot.png)
 
-## New to Telemetry? (A 1-Minute Primer)
-
-If you are new to observability, think of your web application as a car. You wouldn't drive on the highway without a dashboard showing your speed, fuel level, and check-engine light. **Telemetry** is simply the act of collecting those signals from your app and displaying them on a screen so you can catch problems before your users do.
-
-Vitalscope collects these signals in two ways:
-1. **Outside-in (PageSpeed / RUM):** Like a mechanic inspecting your car from the outside. It measures how fast your website actually loads and feels for your users.
-2. **Inside-out (Connected Apps / Ingest):** Like the car's internal computer. Your backend or frontend explicitly sends messages to Vitalscope saying things like *"My checkout queue has 5 items"* or *"I am using 50MB of RAM"*.
-
-*Confused by terms like RUM, Ingest, or Series? Check out our simple **[Glossary of Terms](docs/GLOSSARY.md)**.*
-
 ## Contents
 
-1. [Use case: monitor an e-commerce](#use-case-monitor-an-e-commerce)
-2. [Step 1 — Run it (2 min)](#step-1--run-it-2-min)
-3. [Step 2 — Connect your website](#step-2--connect-your-website)
-4. [Step 3 — Connect your apps](#step-3--connect-your-apps)
-5. [Integration example: shop-api](#integration-example-shop-api)
-6. [Customize panels](#customize-panels)
-7. [Configuration, environment variables & tokens](#configuration-environment-variables--tokens)
+1. [New to Telemetry? (A 1-Minute Primer)](#new-to-telemetry-a-1-minute-primer)
+2. [The Ecosystem: Who is this for?](#the-ecosystem-who-is-this-for)
+3. [Use Case: Monitoring an E-Commerce](#use-case-monitoring-an-e-commerce)
+4. [Prerequisites](#prerequisites)
+5. [Quick Start: Your First 5 Minutes](#quick-start-your-first-5-minutes)
+6. [User Manual: Day-to-Day Usage](#user-manual-day-to-day-usage)
+7. [Technical Reference: Config, Env Vars & Tokens](#technical-reference-config-env-vars--tokens)
 8. [Motivation](#motivation)
-9. [Architecture](#architecture)
-10. [Technologies](#technologies)
-11. [Original project (charting exercise)](#original-project-charting-exercise)
+9. [Architecture & Technologies](#architecture--technologies)
+10. [Original Project (Charting Exercise)](#original-project-charting-exercise)
 
-## Use case: monitor an e-commerce
+---
 
-You run an online store with a web storefront and a Node.js checkout API. You want one screen — not four tools — answering:
+## New to Telemetry? (A 1-Minute Primer)
 
-- **Is the site up right now?** → the STATUS section shows per-minute uptime strips for the site (probed via PageSpeed) and the gateway, with a global banner when anything degrades.
-- **How does it feel for real users?** → the HEALTH section shows Core Web Vitals from Lighthouse (lab) and the Chrome UX Report (Field Data), with each value colored good/warn/poor against the official thresholds.
-- **Is the checkout backend healthy?** → `shop-api` reports its own metrics (checkout latency, queue depth, cache hit ratio) through the ingest endpoint; panels for them appear automatically.
-- **Is anything broken at all?** → panel errors are aggregated into a single app-bar popover, so a down source never leaves you staring at empty panels.
+If you are new to observability, think of your web application as a car. You wouldn't drive on the highway without a dashboard showing your speed, fuel level, and check-engine light. **Telemetry** is simply collecting those signals from your app and showing them on a screen so you can spot problems before your users do.
 
-One dashboard, three data paths, zero agents to configure by hand.
+Vitalscope collects these signals in two simple ways:
+1. **Outside-in (PageSpeed / RUM):** Like a mechanic inspecting your car from the outside. It checks how fast your website actually loads and feels for visitors.
+2. **Inside-out (Connected Apps / Ingest):** Like the car's internal computer. Your backend or frontend sends quick updates to Vitalscope saying things like *"My checkout queue has 5 items"* or *"I am using 50MB of memory"*.
 
-## Step 1 — Run it (2 min)
+*Confused by terms like RUM, Ingest, or Series? Check out our plain-English **[Glossary of Terms](docs/GLOSSARY.md)**.*
 
-Requires [Node.js](https://nodejs.org/) and [NPM](https://www.npmjs.com/).
+---
+
+## The Ecosystem: Who is this for?
+
+Vitalscope is built for **indie hackers, small engineering teams, and startups** who want robust observability without the steep pricing, heavy agents, or complex setups of enterprise tools like Datadog or New Relic.
+
+This tool fits perfectly into your ecosystem if you are running:
+* **Node.js Backends:** Express, Fastify, NestJS, or custom APIs.
+* **Modern Frontends (SPA/SSR):** Vue, React, Astro, Next.js, or Nuxt.
+* **Self-hosted Infrastructure:** VPS deployments (DigitalOcean, Hetzner, AWS EC2) where you want full ownership of your telemetry data.
+
+If you want a single pane of glass that takes 5 minutes to set up and runs entirely on your own infrastructure, Vitalscope is for you.
+
+---
+
+## Use Case: Monitoring an E-Commerce
+
+Imagine you run an online store with a website and a Node.js checkout API. Vitalscope answers four daily questions on a single screen:
+
+- **Is the site up right now?** → The **STATUS** section shows minute-by-minute uptime bars for your site and gateway.
+- **How fast is it for real people?** → The **HEALTH** section displays Google Lighthouse and real-user Web Vitals, color-coded (green, yellow, red) so you immediately know if things are good or slow.
+- **Is my backend healthy?** → Your API reports its own numbers (like checkout speed or active users), and charts appear automatically.
+- **Is anything broken?** → If a data source fails, errors are grouped into a single alert icon at the top instead of leaving you staring at broken charts.
+
+---
+
+## Prerequisites
+
+Before running the project, ensure you have the following installed on your local machine or server:
+* **[Node.js](https://nodejs.org/)**: Version 18.x or 20.x+ recommended.
+* **Git**: To clone the repository.
+* **Google PageSpeed API Key (Optional but recommended):** Required if you want to track real-world frontend performance (CrUX) for your URLs without falling back to sample data.
+
+---
+
+## Quick Start: Your First 5 Minutes
+
+Ready to try it? Let's get the dashboard running and send your first metric. 
+
+### Step 1: Start the Dashboard
+Clone the project, install dependencies, and start the local server:
 
 ```shell
-git clone https://github.com/christianjtr/chart-metric-dashboard.git
+git clone [https://github.com/christianjtr/chart-metric-dashboard.git](https://github.com/christianjtr/chart-metric-dashboard.git)
 cd chart-metric-dashboard
 npm install
 npm run dev
 ```
 
-Open `http://localhost:5173`. The dashboard starts immediately on **Sample Data** (clearly flagged with a `Sample` chip) — nothing else to configure.
+Open `http://localhost:5173` in your browser. It starts immediately using **Sample Data** (marked with a `Sample` badge) so you can explore the interface right away.
 
-Build and tests:
+### Step 2: Monitor your Website's Speed
+1. Click the **gear icon (⚙️)** in the top-right corner to open Settings.
+2. Go to the **PageSpeed** tab, enter your public website URL (e.g., `https://shop.example.com`), and click **Save**.
+*(Note: Without a Google PageSpeed API key, panels will stay on Sample Data. See the [Technical Reference](#technical-reference-config-env-vars--tokens) below to add your key).*
 
-```shell
-npm run build --workspace client   # vue-tsc + vite production build
-npm run test --workspace server    # vitest (62 tests)
-```
+### Step 3: Create your Security Key (Ingest Token)
+To let your apps send data safely to the dashboard, you need to generate a password token:
+1. Open Settings (⚙️) → **Ingest** tab.
+2. Click **Generate**, copy the token, and click **Save**.
 
-## Step 2 — Connect your website
-
-1. Open the dashboard, click the **gear icon → PageSpeed** tab.
-2. Enter the public URL of your site (e.g. `https://shop.example.com`) **and** a PageSpeed Insights API key. You can enter the key in Settings or provide `PAGESPEED_API_KEY` in the gateway's environment.
-3. Save. With both configured, the PSI panels request your site's lab metrics; if the site has enough Chrome UX Report traffic, the **Core Web Vitals (field data)** table fills in too. Without a key, the panels continue showing **Sample Data**, even when a URL is saved. See [configuration and tokens](#configuration-environment-variables--tokens) for precedence and failure behavior.
-
-## Step 3 — Connect your apps
-
-Any frontend or backend can become a **Connected App** by reporting metrics to `POST /ingest`:
-
-1. Click the **gear icon → Ingest** tab, **generate an Ingest Token**, copy it and **Save** (the endpoint answers `503` until a token is saved; wrong tokens get `403`).
-2. Report metrics over HTTP from anywhere:
+### Step 4: Send your First Metric
+Let's pretend one of your apps is sending data. Open a new terminal window and run this command (replace `<YOUR_TOKEN>` with the one you just copied):
 
 ```shell
 curl -X POST http://localhost:3000/ingest \
-  -H "Authorization: Bearer <INGEST_TOKEN>" \
+  -H "Authorization: Bearer <YOUR_TOKEN>" \
   -H "Content-Type: application/json" \
-  -d '{"app":"shop-api","metrics":[{"name":"checkout_latency_ms","value":132}]}'
-
-# → 202 {"ok":true,"accepted":1,"rejected":0}
+  -d '{"app":"my-api","metrics":[{"name":"active_users","value":42}]}'
 ```
 
-3. Or drop in the zero-dependency agents:
+**Look at the dashboard!** A brand-new chart panel appears automatically under **Connected apps**. Zero configuration needed.
+
+*(Want to see a more realistic demo? Run `VITALSCOPE_TOKEN=<YOUR_TOKEN> node examples/shop-api.mjs` to simulate a live store sending 6 metrics every 5 seconds).*
+
+---
+
+## User Manual: Day-to-Day Usage
+
+Once you have tested the Quick Start, here is how to connect your real projects and customize the screen.
+
+### 1. Reading the Interface
+* **Global Status Banner:** Appears at the top of the screen and turns red if any monitored service goes down.
+* **Delta Chips (▲/▼):** Small badges next to numbers showing if performance improved (green) or got worse (red) compared to the previous check.
+* **Error Popover:** Quietly collects connection errors inside the top bar's warning icon so your screen stays clean.
+
+### 2. Connect your Frontend (Real User Monitoring)
+To measure how fast your website loads on your visitors' actual phones and laptops, paste this tiny script just before the closing `</head>` tag of your HTML:
 
 ```html
-<!-- Browser (RUM: FCP, LCP, CLS, INP, TTFB via PerformanceObserver, beaconed on pagehide) -->
 <script src="http://localhost:3000/agent/vitalscope.js"
-        data-app="web" data-url="http://localhost:3000" data-token="<INGEST_TOKEN>"></script>
+        data-app="web" 
+        data-url="http://localhost:3000" 
+        data-token="<YOUR_INGEST_TOKEN>"></script>
 ```
+*It runs silently in the background and sends performance stats when the user leaves the page, without slowing down your site.*
 
-```js
-// Node (RSS, heap, event-loop lag + custom metrics)
+### 3. Connect your Node.js Backend
+To track server memory, CPU lag, and custom business metrics (like orders or signups), import the zero-dependency Node agent in your backend:
+
+```javascript
 import { initVitalscope } from './agent/node/vitalscope-node.js'
-const vitalscope = initVitalscope({ app: 'shop-api', url: 'http://localhost:3000', token: '<INGEST_TOKEN>' })
-vitalscope.metric('queue_depth', 7)
+
+// Starts tracking server RAM and health automatically
+const vitalscope = initVitalscope({ 
+  app: 'shop-api', 
+  url: 'http://localhost:3000', 
+  token: '<YOUR_INGEST_TOKEN>' 
+})
+
+// Send custom metrics from anywhere in your code
+vitalscope.metric('orders_processed', 1)
 ```
 
-Every pushed metric is namespaced as `<app>.<name>`. Panels for new metrics appear **automatically** as Auto Panels in the **Connected apps** section (with an "Auto" chip) — no config edits needed.
-
-## Integration example: shop-api
-
-The repo ships a runnable simulation of the e-commerce backend above — it uses the real Node agent and pushes business metrics every 5 seconds:
-
-```shell
-VITALSCOPE_TOKEN=<INGEST_TOKEN> node examples/shop-api.mjs
-```
-
-What it does:
-
-1. Loads the same agent a production backend would use (`agent/node/vitalscope-node.js`), configured via `VITALSCOPE_URL`, `VITALSCOPE_TOKEN` and `VITALSCOPE_APP`. The URL and app name default to `http://localhost:3000` and `shop-api`; **the token is required** — the example exits with an error if it is missing.
-2. Simulates checkout latency (drifting 40–800 ms), queue depth (drifting integers) and cache hit ratio (60–100 %) with realistic noise, and reports them as `shop-api.checkout_latency_ms`, `shop-api.queue_depth`, `shop-api.cache_hit_pct`.
-3. Pushes the agent's own process metrics too (`rss_mb`, `heap_used_mb`, `event_loop_lag_ms`) — six panels total appear under **Connected apps** within seconds:
-
-```
-✓ pushed 6 metrics (queue=4, latency=169 ms, cache=92.0 %)
-```
-
-4. **Keep the dashboard open while it runs** and watch the Auto Panels appear and drift.
-5. If you stop the script, the Auto Panels keep showing the last reported values (staleness handling — e.g. marking metrics as unknown after they stop arriving — is on the roadmap).
-
-To make one of those panels permanent (instead of synthesized on the fly), declare it in config — see below.
-
-## Customize panels
-
-Panels, sources and thresholds live in `dashboard.config.json`, shared by both layers. Example of a declared panel for a pushed metric:
+### 4. Make an Auto Panel Permanent
+Whenever you send a new metric, Vitalscope creates a temporary **Auto Panel** with default settings. To customize its colors, limits, or size, declare it permanently in `dashboard.config.json`:
 
 ```json
 {
-  "title": "Checkout latency",
-  "description": "Latency of the checkout endpoint, as reported by the shop-api connected app.",
+  "title": "Active Users",
+  "description": "Live users currently active on the platform.",
   "source": "pushed",
-  "metric": "shop-api.checkout_latency_ms",
+  "metric": "my-api.active_users",
   "chart": "sparkstat",
   "granularity": "minute",
   "reduce": "avg",
-  "unit": "ms",
   "refresh": 60,
   "span": 3,
   "section": "Connected apps",
-  "lowerIsBetter": true,
+  "lowerIsBetter": false,
   "thresholds": [
     { "color": "#4fac6e", "value": 0 },
-    { "color": "#e0a12f", "value": 300 },
-    { "color": "#e5544b", "value": 600 }
+    { "color": "#e0a12f", "value": 50 }
   ]
 }
 ```
+*Save the file and refresh the browser. Your custom panel replaces the temporary one.*
 
-A declared panel on the same metric shadows its Auto Panel; auto panels are never written to config.
+---
 
-## Configuration, environment variables & tokens
+## Technical Reference: Config, Env Vars & Tokens
 
-**Design decision:** commit the dashboard's structure (Sources, Panels and thresholds), with references to secrets rather than their values — see [ADR 0002](docs/adr/0002-config-driven-dashboard.md).
-Keep runtime settings and the shared ingest credential outside Git in `dashboard.settings.json`; the push-ingest design is documented in [ADR 0009](docs/adr/0009-push-ingest-connected-apps.md).
+**Design decision:** Structure (Sources, Panels, thresholds) lives in `dashboard.config.json` and is committed to Git (see [ADR 0002](docs/adr/0002-config-driven-dashboard.md)). Secrets and runtime settings live in `dashboard.settings.json` and are git-ignored (see [ADR 0009](docs/adr/0009-push-ingest-connected-apps.md)).
 
-### Environment variables
+### Environment Variables
 
-The gateway and Node agent read their own process environment. Set gateway variables in the shell or deployment environment that starts the gateway; set `VITALSCOPE_*` in the app that reports metrics. The browser agent uses HTML attributes instead.
+The gateway does **not** automatically load `.env` files. Pass variables directly when starting the server (e.g., `PAGESPEED_API_KEY='xyz' npm run dev`):
 
 | Name | Scope | Default | What it controls | If omitted |
 | --- | --- | --- | --- | --- |
-| `PORT` | Gateway | `3000` | HTTP port for tRPC, ingest and agent scripts. | Listens on port 3000. Changing it also requires updating client/proxy and agent URLs; the Vite dev proxy targets port 3000 explicitly. |
-| `DASHBOARD_CONFIG` | Gateway | Locate `dashboard.config.json` | Path to the shared Sources/Panels definition. | Searches from the working directory upward; if not found, attempts the filename in the working directory. A missing or invalid config causes config-dependent requests to fail. |
-| `DASHBOARD_SETTINGS` | Gateway | Locate `dashboard.settings.json` | Path used to read and save runtime settings. | Uses the same upward search, falling back to the working directory. A missing or invalid settings file loads as empty settings. |
-| `PAGESPEED_API_KEY` | Gateway / PSI adapter | Unset | API key for live PageSpeed requests, used when no saved key exists. | Uses the saved key; if neither is available, PSI returns Sample Data. |
-| `psiTargetUrl` | Gateway / PSI adapter | Unset | Case-sensitive environment fallback for the target URL when it is absent from Settings. | Uses the saved URL. With a key but no URL in either place, the PSI request fails due to an unresolved parameter. Without a key, PSI stays on Sample Data. |
-| `EXTERNAL_API_KEY` | Gateway / example REST source | Empty string | Entire `Authorization` header value for the `external-api` source in the committed config; include a scheme such as `Bearer ` if the real service requires it. | Resolves to an empty header. This placeholder source is not needed for PSI or ingest; configure its URL and credentials before using it. |
-| `VITALSCOPE_URL` | Node agent / shop-api example | `http://localhost:3000` | Gateway base URL for metric reports. | Reports to the local gateway. |
-| `VITALSCOPE_TOKEN` | Node agent / shop-api example | Empty string | Credential sent with each report; must match the gateway's saved `ingestToken`. | The Node agent skips sending; the shop-api example exits with an error. Setting it does not configure the gateway's token. |
-| `VITALSCOPE_APP` | Node agent / shop-api example | `node-app` / `shop-api` respectively | Namespace prefix for pushed metric names. | Uses the corresponding default app name. |
+| `PORT` | Gateway | `3000` | HTTP port for tRPC, ingest, and agent scripts. | Listens on 3000. Changing it requires updating Vite proxy and agent URLs. |
+| `DASHBOARD_CONFIG` | Gateway | `dashboard.config.json` | Path to the shared Sources/Panels definition. | Searches upward from working directory. Missing/invalid config fails requests. |
+| `DASHBOARD_SETTINGS` | Gateway | `dashboard.settings.json` | Path used to read and save runtime settings. | Searches upward from working directory. Missing file loads empty settings. |
+| `PAGESPEED_API_KEY` | Gateway | Unset | API key for live PageSpeed requests (fallback if not saved in UI). | Uses saved UI key; if neither exists, returns Sample Data. |
+| `psiTargetUrl` | Gateway | Unset | Fallback target URL if absent from UI Settings. | Uses saved UI URL. Fails if key is present but no URL is found. |
+| `EXTERNAL_API_KEY` | Gateway | Empty string | `Authorization` header for the placeholder `external-api` source. | Resolves to empty header. |
+| `VITALSCOPE_URL` | Node agent | `http://localhost:3000` | Gateway base URL for metric reports. | Reports to local gateway. |
+| `VITALSCOPE_TOKEN` | Node agent | Empty string | Ingest token sent with each report. | Agent skips sending; `shop-api` example exits with error. |
+| `VITALSCOPE_APP` | Node agent | `node-app` | Namespace prefix for pushed metric names. | Uses default app name. |
 
-Explicit Node agent options (`url`, `app`, `token`) take precedence over `VITALSCOPE_*`. REST query parameters using `setting:NAME` resolve the saved setting first, then the gateway environment; `env:NAME` reads only the environment. Source headers also support `env:NAME` references, resolving missing values to an empty string.
+### Tokens & API Keys
 
-Path overrides are resolved relative to the gateway's working directory unless absolute. Use an absolute `DASHBOARD_SETTINGS` path for a predictable deployment location, and ensure its parent directory exists and is writable. An alternate filename is **not automatically git-ignored**.
-
-The gateway's current startup script does **not** automatically load `.env` files. For example, after saving your site's URL in Settings, start from the repository root with:
-
-```shell
-PAGESPEED_API_KEY='<your-pagespeed-api-key>' npm run dev
-```
-
-For the reporting app, use the `VITALSCOPE_TOKEN=... node examples/shop-api.mjs` command above. These are separate credentials with separate purposes.
-
-### Tokens and API keys
-
-| Credential | Why it exists | How to configure it | Behavior and tradeoffs |
+| Credential | Purpose | How to configure | Behavior |
 | --- | --- | --- | --- |
-| `ingestToken` | Shared credential that gates writes to `POST /ingest`; prevents unauthenticated metric submissions to that endpoint when the gateway's Settings access is protected. | Settings → Ingest → Generate → copy → **Save**. The UI generates 24 random bytes as 48 hex characters. Settings accepts 16–128 characters and persists the token in the settings file. Configure reporters with the same value. | No saved token: `503`. Missing or incorrect submitted token: `403`. After successful authentication, a payload that fails schema validation: `400`. Valid payload: `202` with `accepted` and `rejected` counts. Accepts `Authorization: Bearer <token>` or `?token=<token>`; a Bearer header takes precedence. |
-| `PAGESPEED_API_KEY` | Authenticates the gateway's live requests to Google PageSpeed Insights; it is unrelated to ingest. | Obtain a PageSpeed Insights API key and enter it in Settings → PageSpeed, or set it in the gateway environment. A saved key takes precedence over the environment. | No effective key: synthetic results marked as Sample Data. A present but invalid key, quota failure or other upstream error surfaces as an error, rather than silently switching to samples. A key alone does not guarantee CrUX field-data availability. |
+| `ingestToken` | Secures `POST /ingest` against unauthorized data submissions. | Settings → Ingest → Generate → copy → **Save**. | No token saved: `503`. Wrong token: `403`. Valid: `202`. Accepts `Bearer` header or `?token=`. |
+| `PAGESPEED_API_KEY` | Authenticates live requests to Google PageSpeed Insights. | Settings → PageSpeed, or via environment variable (UI setting wins). | No key: returns Sample Data. Invalid key/quota error: surfaces error on panel. |
 
-The ingest handler checks token string lengths before comparing buffers with `crypto.timingSafeEqual`. Prefer the generated hexadecimal token: the current length guard counts characters rather than UTF-8 bytes, so this is not a blanket guarantee for arbitrary Unicode token inputs.
-
-The browser agent uses `?token=` because `sendBeacon` cannot attach a custom Authorization header; the Node agent currently uses query-string authentication too. Query strings can appear in access logs and monitoring tools. Prefer Bearer headers for custom HTTP integrations and redact query tokens in infrastructure logs. The browser's `data-token` is visible to visitors, so it cannot be treated as a server-only secret or as proof of an individual reporter's identity.
-
-### Browser agent attributes
-
-These attributes belong on the `<script>` element that loads `/agent/vitalscope.js`:
+### Browser Agent Attributes (`<script>` tag)
 
 | Attribute | Default | What it controls | If omitted |
 | --- | --- | --- | --- |
-| `data-url` | Empty string | Gateway base URL, without a trailing slash. | Sends to `/ingest` on the **page's origin**, not necessarily the origin serving the script. Set it explicitly when the gateway is elsewhere. |
-| `data-app` | `web` | Namespace for metrics, such as `web.lcp_ms`. | Uses `web`. |
-| `data-token` | Empty string | The gateway's saved ingest token. | Reports with an empty token; an enabled gateway rejects them with `403` (or `503` if ingest is disabled). |
+| `data-url` | Empty string | Gateway base URL (no trailing slash). | Sends to `/ingest` on the current page's origin. |
+| `data-app` | `web` | Metric namespace prefix (e.g., `web.lcp_ms`). | Uses `web`. |
+| `data-token` | Empty string | The gateway's saved ingest token. | Rejected by gateway (`403` or `503`). |
 
-The agent sends at most once per page load, on `pagehide` or when the document becomes hidden, and only when it has metrics to report. It uses `sendBeacon` when available, otherwise a keepalive `fetch`.
+### Config Files & Security Notes for Deployment
 
-### Config files and Git
+* **Git Policy:** Commit `dashboard.config.json` (use `env:NAME` or `setting:NAME` instead of raw secrets). Never commit `dashboard.settings.json` or `.env.local` files.
+* **Authentication:** The dashboard has no built-in user login. In production, place it behind a VPN, private network, or an authenticated reverse proxy (like Nginx/Cloudflare Access).
+* **CORS & HTTPS:** CORS is currently open (`*`). Always use HTTPS in production so ingest tokens aren't exposed in transit, and rotate your ingest token in Settings after public demos.
 
-| File | Git policy | Purpose and implications |
-| --- | --- | --- |
-| `dashboard.config.json` | Committed | Reproducible Sources, Panels, thresholds and mappings. Keep actual secrets out; use `env:NAME` / `setting:NAME` references. |
-| `dashboard.settings.json` | Ignored | Local target URL, optional PageSpeed API key and ingest token. Written by the Settings UI as plain JSON, not encrypted. Provision it separately per deployment. |
-| `.env.local`, `.env.*.local` | Ignored | Local environment files, if you choose to use them with an explicit loader. Being ignored does not make the gateway load them. |
-| `.env` or a custom settings filename | Not covered by these ignore rules | Do not assume these files are excluded from Git; add an appropriate ignore rule before storing secrets in them. |
-
-### Security notes for deployment
-
-- **Use a trusted network or an authenticated gateway/reverse proxy.** The dashboard has no built-in user authentication. Its Settings procedures can read stored keys/tokens and overwrite settings without authentication; the ingest token protects only the ingest endpoint.
-- **CORS is currently open** (`cors()` allows all origins). Restrict allowed browser origins for your deployment, but do not treat CORS as access control: non-browser HTTP clients are not constrained by it.
-- **Use HTTPS for remote reporting** and protect the settings file and request logs. A git-ignored secret can still be exposed through filesystem access, Settings responses, browser snippets or query-string logs.
-- **Rotate the ingest token after demos or sharing snippets:** generate and save a replacement, then update every reporter. Only one token is active; previous tokens stop working immediately. To disable ingest, clear the token and save. For PageSpeed, clearing a saved key still leaves an environment-provided key effective.
+---
 
 ## Motivation
 
-This project started as a charting exercise (see [the original brief](#original-project-charting-exercise) at the bottom) and grew into a real dashboard when each chart stopped being a demo and started answering a question: *is the site healthy right now, and by how much?*
+This project started as a charting exercise (see [the original project](#original-project-charting-exercise) below) and grew into a real dashboard when each chart stopped being a demo and started answering a real question: *is the site healthy right now, and by how much?*
 
 The design goals that followed:
 
-- **Declarative, not hardcoded** — every Panel, Source and threshold lives in a single `dashboard.config.json`, shared by both the client and the Gateway.
-- **Trustworthy numbers** — every value carries its context: a healthy reference (e.g. *LCP ≤ 2.5 s*) with a cited source, thresholds with Grafana semantics, and a Delta Chip showing whether the last change was an improvement.
-- **Zero-config observability** — a backend should be able to send its metrics with one line of code, and the dashboard should figure out the rest (Auto Panels).
+- **Declarative, not hardcoded** — Every Panel, Source, and threshold lives in a single `dashboard.config.json`, shared by both the client and the Gateway.
+- **Trustworthy numbers** — Every value carries its context: a healthy reference (e.g., *LCP ≤ 2.5 s*) with a cited source, thresholds with Grafana semantics, and a Delta Chip showing whether the last change was an improvement.
+- **Zero-config observability** — A backend should be able to send its metrics with one line of code, and the dashboard should figure out the rest (Auto Panels).
 
-## Architecture
+---
 
-```
+## Architecture & Technologies
+
+### Folder Structure
+```text
 chart-metric-dashboard/
-├── client/                 # Vue 3 + Vuetify + Pinia SPA
-│   └── src/
-│       ├── api/            # tRPC client (httpBatchLink, types imported from server)
-│       ├── components/     # StatPanel, SparkStatPanel, PanelChart, TablePanel, StatusRow…
-│       └── stores/         # Pinia store: config, series polling, error aggregation
-├── server/                 # Express + tRPC Gateway (CommonJS-style TS, tsx in dev, vitest)
-│   └── src/
-│       ├── trpc/           # router: config, series, settings (zod-validated inputs)
-│       ├── sources/        # Source adapters: internal, ndjson, rest (PSI), virtual "pushed"
-│       ├── aggregate/      # Granularity bucketing + Reduce
-│       ├── metrics/        # Metrics Collector: ring buffers, self-sampling, push storage
-│       ├── config/         # config/settings loading, Auto Panels synthesis
-│       └── routes/         # /ingest, /agent/*, REST passthroughs
-├── agent/                  # Drop-in browser and Node agents
-├── examples/               # Runnable integrations (examples/shop-api.mjs)
-├── dashboard.config.json   # Sources + Panels (committed)
-└── dashboard.settings.json # Runtime settings (git-ignored)
+├── client/                 # Vue 3 + Vuetify + Pinia frontend SPA
+├── server/                 # Express + tRPC Gateway & Metrics Collector
+├── agent/                  # Zero-dependency browser & Node agents
+├── examples/               # Runnable demo scripts (shop-api.mjs)
+├── docs/                   # Glossary & Architecture Decision Records (ADRs)
+├── dashboard.config.json   # Shared panel & source layout (committed)
+└── dashboard.settings.json # Runtime settings & secrets (git-ignored)
 ```
 
-Data flow: **Source → Adapter → Collector/aggregate → Gateway (tRPC) → Pinia store → Panel**.
+### Data Flow & Stack
+**Data Flow:** `Source → Adapter → Collector/Aggregate → Gateway (tRPC) → Pinia Store → Panel`
 
-- **Sources** are interchangeable data origins declared in config; each kind has an Adapter that materializes them as named `Series`. The internal adapter exposes the Metrics Collector's own health samples (latency, error rate, CPU, RAM, uptime) exactly like any external Source.
-- The **Gateway** is a single Express server serving the tRPC router (queries validated with zod), the `POST /ingest` route, the agent scripts, and PSI proxy calls with caching.
-- **Auto Panels** are synthesized at query time from the Collector's pushed-metric names; they are never written to config.
-- The client polls `series` per Panel on the configured Refresh interval and aggregates panel errors into the app-bar error popover.
+* **Frontend:** Vue 3.5, Vuetify 4, Pinia 4, ECharts 6, tRPC Client 11, Vite 8, TypeScript.
+* **Backend:** Express 4, tRPC Server 11, Zod 3, date-fns 4, Vitest 3 (`npm run test --workspace server`).
+* **Build:** `npm run build --workspace client`
 
-For the ingest design decision, see [ADR 0009](docs/adr/0009-push-ingest-connected-apps.md).
+---
 
-## Technologies
+## Original Project (Charting Exercise)
 
-- **Client**: Vue 3.5, Vuetify 4, Pinia 4, ECharts 6 (via vue-echarts), tRPC client 11, Vite 8, TypeScript 6
-- **Server**: Express 4, tRPC server 11, zod 3, date-fns 4, TypeScript 5/6-compatible, tsx (dev), Vitest 3
-- **Agents**: zero-dependency ES modules (browser + Node)
+This project evolved from a technical assessment built with **Vue v2, Vuetify, D3/C3, and Express (`ndjson`)**. The original goal was to implement common BI graphs (`lineSeriesChart`, `barChart`) capable of displaying fake platform errors aggregated by day, week, month, and year across two years of historical data.
 
-## Original project (charting exercise)
+You can check out the original repository at [christianjtr/charting](https://github.com/christianjtr/charting).
 
-It's just another test...
-
-Dashboard with a few charts (lineSeriesChart, barChart) to display errors regarding a fake platform. (VueJS v2, D3/C3, Express).
-
-### Assestment
-
-We are going to request you to implement one common graphs on BI applications using D3 library. This should be able to display the information by day, week, month and year. We have data for two years.
-
-### Demo
-
-![](charting.gif)
-
-### Installation and running the project
-
-The project requires [Node.js](https://nodejs.org/) and [NPM](https://www.npmjs.com/) to run.
-
-Clone the repository:
-
-```shell
-git clone https://github.com/christianjtr/charting.git
-```
-
-### Project setup
-
-```
-npm install
-```
-
-### Compiles and hot-reloads for development
-
-```
-npm run serve
-```
-
-### Compiles and minifies for production
-
-```
-npm run build
-```
-
-### Technologies
-
-- Front-end:
-
-  - Vue v2, Vuetify, Vuex, D3/C3, Axios, Sass.
-
-- Back-end
-  - Express, ndjson.
+![Original charting demo](charting.gif)
