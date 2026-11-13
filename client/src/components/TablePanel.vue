@@ -76,7 +76,7 @@ const statusOf = (ref: TableReference, value?: number): 'good' | 'warn' | 'poor'
           <tr>
             <th class="panel-table-head">Metric</th>
             <th class="panel-table-head panel-table-head-right">Detected</th>
-            <th class="panel-table-head panel-table-head-right">Recommended</th>
+            <th class="panel-table-head panel-table-head-right d-none d-sm-table-cell">Recommended</th>
           </tr>
         </thead>
         <tbody>
@@ -88,7 +88,7 @@ const statusOf = (ref: TableReference, value?: number): 'good' | 'warn' | 'poor'
               </span>
               <span v-else>&mdash;</span>
             </td>
-            <td class="panel-table-recommended">
+            <td class="panel-table-recommended d-none d-sm-table-cell">
               <span class="panel-table-healthy">{{ row.ref.healthy }}</span>
               <a
                 v-if="row.ref.url"

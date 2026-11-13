@@ -131,7 +131,7 @@ onBeforeUnmount(() => store.stopPolling())
           stroke-linejoin="round"
         />
       </svg>
-      <v-app-bar-title class="app-title">Vitalscope</v-app-bar-title>
+      <v-app-bar-title class="app-title d-none d-sm-block">Vitalscope</v-app-bar-title>
       <v-btn-toggle
         :model-value="store.timeRange"
         mandatory
@@ -151,7 +151,7 @@ onBeforeUnmount(() => store.stopPolling())
         density="compact"
         variant="outlined"
         divided
-        class="mr-3"
+        class="mr-3 d-none d-md-flex"
         @update:model-value="setRefresh($event as string | number)"
       >
         <v-btn value="panel" size="small">Panel</v-btn>
@@ -432,7 +432,7 @@ onBeforeUnmount(() => store.stopPolling())
 }
 
 .brand-mark {
-  margin-left: 4px;
+  margin-left: 12px;
   border-radius: 7px;
   box-shadow: 0 0 14px rgba(122, 111, 240, 0.45);
 }
