@@ -96,6 +96,7 @@ export const PanelSchema = z.object({
   thresholds: z.array(ThresholdSchema).max(4).optional(),
   span: z.number().int().min(1).max(12).default(6),
   section: z.string().optional(),
+  auto: z.boolean().optional(),
   reduce: ReduceSchema.default('sum')
 })
 

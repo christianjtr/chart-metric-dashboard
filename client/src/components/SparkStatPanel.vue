@@ -105,6 +105,7 @@ onBeforeUnmount(() => {
     <v-progress-linear :active="props.loading" color="primary" indeterminate />
     <v-card-title class="panel-card-header">
       <span class="panel-card-title">{{ props.panel.title }}</span>
+      <v-chip v-if="props.panel.auto" size="x-small" variant="tonal" class="ml-2">Auto</v-chip>
       <v-chip v-if="props.sample" size="x-small" color="info" variant="tonal" class="ml-2">Sample</v-chip>
       <v-spacer />
       <PanelError :error="props.error" />

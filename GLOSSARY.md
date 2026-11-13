@@ -123,3 +123,19 @@ _Avoid_: RUM data, user metrics
 **Web Vitals Table**:
 A curated Table Panel that shows each metric row with its detected value (colored good/warn/poor), the recommended value and the cited source, driven by per-row Config references instead of listing every raw audit id.
 _Avoid_: audit table, raw table
+
+**Ingest Endpoint**:
+The `POST /ingest` gateway route where any connected app reports metrics (`{ app, metrics: [{ name, value }] }`) authenticated with the Ingest Token. Metrics are stored in the Metrics Collector namespaced as `<app>.<name>`.
+_Avoid_: push API, collector route
+
+**Ingest Token**:
+The bearer token (also accepted as `?token=`) required by the Ingest Endpoint, generated and copied from Settings → Ingest and persisted in dashboard.settings.json. Without a token, ingest answers 503 (disabled).
+_Avoid_: API key (reserved for the PageSpeed key)
+
+**Connected App**:
+An external frontend or backend that reports its internal metrics to Vitalscope through the Ingest Endpoint using the drop-in agents (`/agent/vitalscope.js` for browsers, `/agent/vitalscope-node.js` for Node) or plain HTTP.
+_Avoid_: client (ambiguous with the dashboard client), integration
+
+**Auto Panel**:
+A Panel synthesized at query time for a pushed metric that has no declared panel, shown in the "Connected apps" section with an "Auto" chip. Declared panels on the same metric shadow it; synthesized panels are never written to dashboard.config.json.
+_Avoid_: dynamic panel, generated panel

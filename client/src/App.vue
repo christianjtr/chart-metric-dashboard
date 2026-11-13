@@ -46,14 +46,19 @@ watch(
 )
 
 const settingsDialog = ref(false)
+const settingsTab = ref('pagespeed')
 const settingsUrl = ref('')
 const settingsApiKey = ref('')
+const ingestUrl = ref('')
+const ingestTokenInput = ref('')
 const aboutDialog = ref(false)
 const savingSettings = ref(false)
 
 function openSettings() {
   settingsUrl.value = store.psiTargetUrl ?? ''
   settingsApiKey.value = store.psiApiKey ?? ''
+  ingestTokenInput.value = store.ingestToken ?? ''
+  ingestUrl.value = window.location.origin
   settingsDialog.value = true
 }
 
@@ -61,9 +66,42 @@ async function saveSettings() {
   savingSettings.value = true
   try {
     await store.savePsiTargetUrl(settingsUrl.value, settingsApiKey.value)
+    await store.saveIngestToken(ingestTokenInput.value.trim() || undefined)
+    store.pushToast('Settings saved')
     settingsDialog.value = false
   } finally {
     savingSettings.value = false
+  }
+}
+
+function generateToken() {
+  const bytes = new Uint8Array(24)
+  crypto.getRandomValues(bytes)
+  ingestTokenInput.value = Array.from(bytes, (b) => b.toString(16).padStart(2, '0')).join('')
+}
+
+const browserSnippet = computed(() => {
+  const url = ingestUrl.value.trim().replace(/\/+$/, '')
+  const token = ingestTokenInput.value.trim()
+  return `<script async src="${url}/agent/vitalscope.js" data-url="${url}" data-app="web" data-token="${token}"><\/script>`
+})
+
+const nodeSnippet = computed(() => {
+  const url = ingestUrl.value.trim().replace(/\/+$/, '')
+  const token = ingestTokenInput.value.trim()
+  return `import { initVitalscope } from '${url}/agent/vitalscope-node.js'
+
+const vitalscope = initVitalscope({ url: '${url}', app: 'my-api', token: '${token}' })
+
+vitalscope.metric('checkout_latency_ms', 132)`
+})
+
+async function copySnippet(text: string) {
+  try {
+    await navigator.clipboard.writeText(text)
+    store.pushToast('Snippet copied to the clipboard')
+  } catch {
+    store.pushToast('Could not copy the snippet')
   }
 }
 
@@ -247,29 +285,88 @@ onBeforeUnmount(() => store.stopPolling())
       </v-container>
     </v-main>
 
-    <v-dialog v-model="settingsDialog" max-width="520">
+    <v-dialog v-model="settingsDialog" max-width="640">
       <v-card title="Settings">
+        <v-tabs v-model="settingsTab" color="primary">
+          <v-tab value="pagespeed">PageSpeed</v-tab>
+          <v-tab value="ingest">Ingest</v-tab>
+        </v-tabs>
         <v-card-text>
-          <v-text-field
-            v-model="settingsUrl"
-            label="PageSpeed Insights target URL"
-            placeholder="https://example.com"
-            hide-details
-            variant="outlined"
-          />
-          <v-text-field
-            v-model="settingsApiKey"
-            label="PageSpeed Insights API key"
-            placeholder="PAGESPEED_API_KEY"
-            type="password"
-            hide-details
-            variant="outlined"
-            class="mt-3"
-          />
-          <div class="text-caption text-medium-emphasis mt-2">
-            Used by the PSI panels. The key is applied immediately — panels switch from sample to
-            live data without a restart.
-          </div>
+          <v-window v-model="settingsTab">
+            <v-window-item value="pagespeed">
+              <v-text-field
+                v-model="settingsUrl"
+                label="PageSpeed Insights target URL"
+                placeholder="https://example.com"
+                hide-details
+                variant="outlined"
+              />
+              <v-text-field
+                v-model="settingsApiKey"
+                label="PageSpeed Insights API key"
+                placeholder="PAGESPEED_API_KEY"
+                type="password"
+                hide-details
+                variant="outlined"
+                class="mt-3"
+              />
+              <div class="text-caption text-medium-emphasis mt-2">
+                Used by the PSI panels. The key is applied immediately — panels switch from sample to
+                live data without a restart.
+              </div>
+            </v-window-item>
+            <v-window-item value="ingest">
+              <div class="d-flex align-center">
+                <v-text-field
+                  v-model="ingestUrl"
+                  label="Vitalscope URL (used in the snippets)"
+                  placeholder="http://localhost:3000"
+                  hide-details
+                  variant="outlined"
+                  density="compact"
+                />
+              </div>
+              <div class="d-flex align-center mt-3">
+                <v-text-field
+                  v-model="ingestTokenInput"
+                  label="Ingest token"
+                  placeholder="Generate a token to enable /ingest"
+                  type="password"
+                  hide-details
+                  variant="outlined"
+                  density="compact"
+                  class="flex-grow-1"
+                />
+                <v-btn variant="text" class="ml-2" @click="generateToken">Generate</v-btn>
+              </div>
+              <div class="text-caption text-medium-emphasis mt-2">
+                Any app can report metrics with <code>POST /ingest</code> using this token. Panels for
+                new pushed metrics appear automatically under "Connected apps".
+              </div>
+              <template v-if="ingestTokenInput.trim().length >= 16">
+                <div class="text-subtitle-2 mt-4 mb-1">Browser snippet (RUM)</div>
+                <div class="snippet-box">
+                  <code class="snippet-code">{{ browserSnippet }}</code>
+                  <v-btn icon size="x-small" variant="text" aria-label="Copy browser snippet" @click="copySnippet(browserSnippet)">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                      <rect x="8" y="8" width="12" height="12" rx="2" stroke="currentColor" stroke-width="2" />
+                      <path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2" stroke="currentColor" stroke-width="2" />
+                    </svg>
+                  </v-btn>
+                </div>
+                <div class="text-subtitle-2 mt-3 mb-1">Node backend snippet</div>
+                <div class="snippet-box">
+                  <code class="snippet-code">{{ nodeSnippet }}</code>
+                  <v-btn icon size="x-small" variant="text" aria-label="Copy Node snippet" @click="copySnippet(nodeSnippet)">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                      <rect x="8" y="8" width="12" height="12" rx="2" stroke="currentColor" stroke-width="2" />
+                      <path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2" stroke="currentColor" stroke-width="2" />
+                    </svg>
+                  </v-btn>
+                </div>
+              </template>
+            </v-window-item>
+          </v-window>
         </v-card-text>
         <v-card-actions>
           <v-spacer />
@@ -356,5 +453,21 @@ onBeforeUnmount(() => store.stopPolling())
 .section-errors-list {
   margin: 4px 0 0;
   padding-left: 18px;
+}
+
+.snippet-box {
+  display: flex;
+  align-items: flex-start;
+  gap: 4px;
+  background: rgba(var(--v-theme-surface-variant), 0.35);
+  border-radius: 8px;
+  padding: 8px 4px 8px 12px;
+}
+
+.snippet-code {
+  flex: 1;
+  white-space: pre-wrap;
+  word-break: break-all;
+  font-size: 0.72rem;
 }
 </style>

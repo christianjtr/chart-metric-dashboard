@@ -12,6 +12,7 @@ const DEFAULT_SAMPLE_MS = 10_000
 const MAX_REQUEST_WINDOWS = 12
 const PROBE_WINDOW_MS = 60_000
 const MAX_PROBE_WINDOWS = 240
+export const MAX_PUSHED_METRICS = 200
 
 const hashSeed = (input: string): number => {
   let h = 2166136261
@@ -43,6 +44,8 @@ export class MetricsCollector {
   private buffers = new Map<string, RingSample[]>()
   private requestWindows: Array<{ start: number; requests: number; errors: number; totalMs: number }> = []
   private probeWindows: Array<{ start: number; sourceId: string; ok: number; fail: number; totalMs: number }> = []
+  private pushedMetrics = new Set<string>()
+  private lastPushAt = new Map<string, number>()
   private previousCpus?: os.CpuInfo[]
   private readonly capacity: number
   private readonly windowMs: number
@@ -135,6 +138,22 @@ export class MetricsCollector {
     samples.push({ t, value })
     if (samples.length > this.capacity) samples.shift()
     this.buffers.set(name, samples)
+  }
+
+  observePushed(name: string, value: number, t = Date.now()): boolean {
+    if (!this.pushedMetrics.has(name) && this.pushedMetrics.size >= MAX_PUSHED_METRICS) return false
+    this.pushedMetrics.add(name)
+    this.lastPushAt.set(name, t)
+    this.push(name, value, t)
+    return true
+  }
+
+  pushedMetricNames(): string[] {
+    return [...this.pushedMetrics]
+  }
+
+  lastPushTime(name: string): number | undefined {
+    return this.lastPushAt.get(name)
   }
 
   sample(): void {

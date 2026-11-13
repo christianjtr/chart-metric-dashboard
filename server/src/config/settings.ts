@@ -4,7 +4,8 @@ import { resolveRootFile } from './paths'
 
 export const DashboardSettingsSchema = z.object({
   psiTargetUrl: z.string().url().optional(),
-  PAGESPEED_API_KEY: z.string().min(1).optional()
+  PAGESPEED_API_KEY: z.string().min(1).optional(),
+  ingestToken: z.string().min(16).max(128).optional()
 })
 
 export type DashboardSettings = z.infer<typeof DashboardSettingsSchema>
