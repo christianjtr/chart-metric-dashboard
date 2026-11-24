@@ -30,7 +30,7 @@ Vitalscope collects these signals in two simple ways:
 1. **Outside-in (PageSpeed / RUM):** Like a mechanic inspecting your car from the outside. It checks how fast your website actually loads and feels for visitors.
 2. **Inside-out (Connected Apps / Ingest):** Like the car's internal computer. Your backend or frontend sends quick updates to Vitalscope saying things like *"My checkout queue has 5 items"* or *"I am using 50MB of memory"*.
 
-*Confused by terms like RUM, Ingest, or Series? Check out our plain-English **[Glossary of Terms](docs/GLOSSARY.md)**.*
+*Confused by terms like RUM, Ingest, or Series? Check out our plain-English **[Glossary of Terms](GLOSSARY.md)**.*
 
 ---
 
